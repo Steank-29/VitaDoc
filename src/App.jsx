@@ -2,6 +2,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthPage from "./pages/AuthPage";
+import Dashboard from './components/Dashboard';
 
 function App() {
   return (
@@ -11,7 +12,7 @@ function App() {
         <Route path="/" element={<AuthPage />} />
 
         {/* Example Dashboard */}
-        <Route path="/dashboard" element={<h1>Doctor Dashboard (Coming Soon)</h1>} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
   );
