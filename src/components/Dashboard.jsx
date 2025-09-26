@@ -25,7 +25,7 @@ function Dashboard() {
       }
 
       try {
-        const res = await fetch('https://vitadoc.onrender.com/auth/verify', {
+        const res = await fetch('http://localhost:5000/auth/verify', {
           headers: {
             'Authorization': `Bearer ${storedToken}`,
             'Content-Type': 'application/json',
@@ -33,7 +33,7 @@ function Dashboard() {
         });
         const data = await res.json();
         if (res.ok && data.valid) {
-          const userRes = await fetch('https://vitadoc.onrender.com/auth/user', {
+          const userRes = await fetch('http://localhost:5000/auth/user', {
             headers: { 'Authorization': `Bearer ${storedToken}` },
           });
           const userData = await userRes.json();
@@ -83,7 +83,7 @@ function Dashboard() {
         {user.picture && (
           <p>
             <strong>Profile Picture:</strong>
-            <img src={`https://vitadoc.onrender.com${user.picture}`} alt="Profile" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
+            <img src={`http://localhost:5000${user.picture}`} alt="Profile" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }} />
           </p>
         )}
         <p><strong>Location:</strong> {user.location}</p>

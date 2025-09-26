@@ -129,7 +129,7 @@ export default function AuthPage() {
     }
 
     try {
-      const res = await fetch("https://vitadoc.onrender.com/auth/signin", {
+      const res = await fetch("http://localhost:5000/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -228,7 +228,7 @@ export default function AuthPage() {
     }
 
     try {
-      const res = await fetch("https://vitadoc.onrender.com/auth/signup", {
+      const res = await fetch("http://localhost:5000/auth/signup", {
         method: "POST",
         body: formData, // Send FormData for multipart/form-data
       });
@@ -254,7 +254,7 @@ export default function AuthPage() {
 
   const handleForgotPassword = (e) => {
     e.preventDefault();
-    window.location.href = "https://vita-doc.vercel.app/forgetpassword"
+    window.location.href = "/forgetpassword"
   };
 
   return (

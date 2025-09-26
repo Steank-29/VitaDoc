@@ -17,7 +17,7 @@ router.post('/reset-password', resetPassword);
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
   const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  res.redirect(`https://vita-doc.vercel.app/dashboard?token=${token}`);
+  res.redirect(`http://localhost:5173/dashboard?token=${token}`);
 });
 
 // Verify JWT token
