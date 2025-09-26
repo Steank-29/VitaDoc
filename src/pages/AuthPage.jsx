@@ -249,7 +249,7 @@ export default function AuthPage() {
 
   const handleGoogleSignIn = () => {
     setIsLoading(true);
-    window.location.href = "https://vitadoc.onrender.com/auth/google";
+    window.location.href = "http://localhost:5000/auth/google";
   };
 
   const handleForgotPassword = (e) => {
