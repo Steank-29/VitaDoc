@@ -1,7 +1,6 @@
-# Firebase credentials
-*.json
 SERVER/config/*.json
-vitadoc-d7115-firebase-adminsdk-fbsvc-8794f7033f.json
-.env
+SERVER/config/vitadoc-d7115-firebase-adminsdk-fbsvc-8794f7033f.json
+
 node_modules/
+.env
 uploads/
