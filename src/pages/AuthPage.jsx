@@ -129,7 +129,7 @@ export default function AuthPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/auth/signin", {
+      const res = await fetch("https://vitadoc.onrender.com/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -228,7 +228,7 @@ export default function AuthPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/auth/signup", {
+      const res = await fetch("https://vitadoc.onrender.com/auth/signup", {
         method: "POST",
         body: formData, // Send FormData for multipart/form-data
       });
@@ -249,7 +249,7 @@ export default function AuthPage() {
 
   const handleGoogleSignIn = () => {
     setIsLoading(true);
-    window.location.href = "http://localhost:5000/auth/google";
+    window.location.href = "https://vitadoc.onrender.com/auth/google";
   };
 
   const handleForgotPassword = (e) => {
