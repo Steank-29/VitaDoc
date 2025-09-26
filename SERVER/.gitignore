@@ -1,0 +1,7 @@
+# Firebase credentials
+*.json
+SERVER/config/*.json
+firebase-adminsdk-*.json
+.env
+node_modules/
+uploads/
