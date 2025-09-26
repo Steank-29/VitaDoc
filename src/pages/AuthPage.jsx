@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -12,76 +12,104 @@ import MedicalImage from "../assets/doctor.png";
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const dateInputRef = useRef(null);
+  const genderSelectRef = useRef(null);
+  const specialtySelectRef = useRef(null);
+
+  // Handle Google OAuth token from redirect
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem('token', token);
+      toast.success("Signed in with Google successfully!");
+      navigate('/dashboard', { replace: true });
+    }
+  }, [location, navigate]);
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const validatePassword = (password) => password.length >= 6;
   const validatePhone = (phone) => /^\+?[\d\s-]{10,15}$/.test(phone);
   const validateName = (name) => name.length >= 2;
 
-const medicalSpecialties = [
-  // Generalists / Primary Care
-  "Family Medicine Physician",
-  "Internist",
-  "Pediatrician",
-  "General Practitioner",
-  "Geriatrician",
+  const getPasswordStrength = (password) => {
+    if (!password) return { strength: "none", color: "transparent" };
+    if (password.length < 6) return { strength: "weak", color: "#dc3545" };
+    if (password.length < 10) return { strength: "medium", color: "#ffc107" };
+    return { strength: "strong", color: "#28a745" };
+  };
 
-  // Medical Specialists
-  "Cardiologist",
-  "Dermatologist",
-  "Endocrinologist",
-  "Gastroenterologist",
-  "Hepatologist",
-  "Nephrologist",
-  "Pulmonologist",
-  "Rheumatologist",
-  "Neurologist",
-  "Allergist",
-  "Immunologist",
-  "Infectious Disease Specialist",
-  "Medical Oncologist",
-  "Radiation Oncologist",
-  "Hematologist",
+  const getConfirmPasswordIconColor = () => {
+    if (!confirmPassword) return "#6c757d";
+    return password === confirmPassword ? "#28a745" : "#dc3545";
+  };
 
-  // Surgical Specialists
-  "General Surgeon",
-  "Cardiothoracic Surgeon",
-  "Neurosurgeon",
-  "Orthopedic Surgeon",
-  "Plastic Surgeon",
-  "Transplant Surgeon",
-  "Vascular Surgeon",
-  "Colorectal Surgeon",
-  "Oral Surgeon",
-  "Maxillofacial Surgeon",
-  "Otolaryngologist",
-  "Ophthalmologist",
-  "Urologist",
-  "Gynecologic Oncologist",
-  "Bariatric Surgeon",
+  const medicalSpecialties = [
+    "Family Medicine Physician",
+    "Internist",
+    "Pediatrician",
+    "General Practitioner",
+    "Geriatrician",
+    "Cardiologist",
+    "Dermatologist",
+    "Endocrinologist",
+    "Gastroenterologist",
+    "Hepatologist",
+    "Nephrologist",
+    "Pulmonologist",
+    "Rheumatologist",
+    "Neurologist",
+    "Allergist",
+    "Immunologist",
+    "Infectious Disease Specialist",
+    "Medical Oncologist",
+    "Radiation Oncologist",
+    "Hematologist",
+    "General Surgeon",
+    "Cardiothoracic Surgeon",
+    "Neurosurgeon",
+    "Orthopedic Surgeon",
+    "Plastic Surgeon",
+    "Transplant Surgeon",
+    "Vascular Surgeon",
+    "Colorectal Surgeon",
+    "Oral Surgeon",
+    "Maxillofacial Surgeon",
+    "Otolaryngologist",
+    "Ophthalmologist",
+    "Urologist",
+    "Gynecologic Oncologist",
+    "Bariatric Surgeon",
+    "Anesthesiologist",
+    "Emergency Medicine Physician",
+    "Hospitalist",
+    "Intensivist",
+    "Critical Care Physician",
+    "Pathologist",
+    "Radiologist",
+    "Interventional Radiologist",
+    "Nuclear Medicine Specialist",
+    "Psychiatrist",
+    "Addiction Psychiatrist",
+    "Physiatrist",
+    "Obstetrician",
+    "Gynecologist",
+    "Maternal-Fetal Medicine Specialist",
+    "Reproductive Endocrinologist",
+    "Adolescent Medicine Specialist",
+    "Neonatologist"
+  ];
 
-  // Other Specialists
-  "Anesthesiologist",
-  "Emergency Medicine Physician",
-  "Hospitalist",
-  "Intensivist",
-  "Critical Care Physician",
-  "Pathologist",
-  "Radiologist",
-  "Interventional Radiologist",
-  "Nuclear Medicine Specialist",
-  "Psychiatrist",
-  "Addiction Psychiatrist",
-  "Physiatrist",
-  "Obstetrician",
-  "Gynecologist",
-  "Maternal-Fetal Medicine Specialist",
-  "Reproductive Endocrinologist",
-  "Adolescent Medicine Specialist",
-  "Neonatologist"
-];
+  const normalizePhoneNumber = (phone) => {
+    const cleaned = phone.replace(/[\s-]/g, '');
+    return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
+  };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -115,6 +143,7 @@ const medicalSpecialties = [
         toast.error(data.message || "Error signing in");
       }
     } catch (err) {
+      console.error('Signin error:', err);
       toast.error("Network error, please try again");
     }
     setIsLoading(false);
@@ -137,7 +166,6 @@ const medicalSpecialties = [
     const phoneNumber = formData.get("phoneNumber");
     const secondPhoneNumber = formData.get("secondPhoneNumber");
 
-    // Validation
     if (!validateName(firstName)) {
       toast.error("First name must be at least 2 characters");
       setIsLoading(false);
@@ -153,23 +181,23 @@ const medicalSpecialties = [
       setIsLoading(false);
       return;
     }
-    if (!gender) {
-      toast.error("Please select a gender");
+    if (!gender || !['male', 'female', 'other'].includes(gender)) {
+      toast.error("Please select a valid gender");
       setIsLoading(false);
       return;
     }
-    if (!dateOfBirth) {
-      toast.error("Please enter your date of birth");
+    if (!dateOfBirth || isNaN(new Date(dateOfBirth).getTime())) {
+      toast.error("Please enter a valid date of birth");
       setIsLoading(false);
       return;
     }
-    if (!medicalSpecialty) {
-      toast.error("Please select a medical specialty");
+    if (!medicalSpecialty || !medicalSpecialties.includes(medicalSpecialty)) {
+      toast.error("Please select a valid medical specialty");
       setIsLoading(false);
       return;
     }
-    if (!picture) {
-      toast.error("Please upload a profile picture");
+    if (!picture || picture.size === 0) {
+      toast.error("Please upload a valid profile picture");
       setIsLoading(false);
       return;
     }
@@ -202,7 +230,7 @@ const medicalSpecialties = [
     try {
       const res = await fetch("http://localhost:5000/auth/signup", {
         method: "POST",
-        body: formData, // Send FormData for file upload
+        body: formData, // Send FormData for multipart/form-data
       });
       const data = await res.json();
       if (res.ok) {
@@ -213,6 +241,7 @@ const medicalSpecialties = [
         toast.error(data.message || "Error signing up");
       }
     } catch (err) {
+      console.error('Signup error:', err);
       toast.error("Network error, please try again");
     }
     setIsLoading(false);
@@ -225,7 +254,7 @@ const medicalSpecialties = [
 
   const handleForgotPassword = (e) => {
     e.preventDefault();
-    toast.info("Password reset not implemented yet. Contact support.");
+    window.location.href = "/forgetpassword"
   };
 
   return (
@@ -322,19 +351,27 @@ const medicalSpecialties = [
               maxWidth: "400px",
               maxHeight: "100%",
               overflowY: "auto",
-              scrollbarWidth: "none", // Firefox
-              msOverflowStyle: "none", // IE/Edge
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
             }}
           >
-            {/* Hide scrollbar for Webkit browsers (Chrome, Safari) */}
             <style>
               {`
                 div[style*="overflowY: auto"]::-webkit-scrollbar {
                   display: none;
                 }
+                .input-group .form-control:focus + .input-group-text {
+                  border-color: #4169E1;
+                  box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
+                }
+                .password-strength-indicator {
+                  height: 4px;
+                  width: 100%;
+                  margin-top: 5px;
+                  border-radius: 2px;
+                }
               `}
             </style>
-            
             <div className="text-end mb-4 d-md-none">
               <img
                 src={Logo}
@@ -366,7 +403,7 @@ const medicalSpecialties = [
             <form onSubmit={isSignUp ? handleSignUp : handleSignIn}>
               {isSignUp && (
                 <>
-                  <div className="mb-3">
+                  <div className="mb-3 input-group">
                     <input
                       type="text"
                       name="firstName"
@@ -375,7 +412,7 @@ const medicalSpecialties = [
                       required
                       disabled={isLoading}
                       style={{
-                        borderRadius: "10px",
+                        borderRadius: "10px 0 0 10px",
                         border: "2px solid #ced4da",
                         padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                         fontSize: "clamp(14px, 2vw, 16px)",
@@ -383,8 +420,11 @@ const medicalSpecialties = [
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
+                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                      <i className="bi bi-person"></i>
+                    </span>
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-3 input-group">
                     <input
                       type="text"
                       name="lastName"
@@ -393,7 +433,7 @@ const medicalSpecialties = [
                       required
                       disabled={isLoading}
                       style={{
-                        borderRadius: "10px",
+                        borderRadius: "10px 0 0 10px",
                         border: "2px solid #ced4da",
                         padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                         fontSize: "clamp(14px, 2vw, 16px)",
@@ -401,10 +441,13 @@ const medicalSpecialties = [
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
+                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                      <i className="bi bi-person"></i>
+                    </span>
                   </div>
                 </>
               )}
-              <div className="mb-3">
+              <div className="mb-3 input-group">
                 <input
                   type="email"
                   name="email"
@@ -413,7 +456,7 @@ const medicalSpecialties = [
                   required
                   disabled={isLoading}
                   style={{
-                    borderRadius: "10px",
+                    borderRadius: "10px 0 0 10px",
                     border: "2px solid #ced4da",
                     padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                     fontSize: "clamp(14px, 2vw, 16px)",
@@ -421,17 +464,21 @@ const medicalSpecialties = [
                     transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                   }}
                 />
+                <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                  <i className="bi bi-envelope"></i>
+                </span>
               </div>
               {isSignUp && (
                 <>
-                  <div className="mb-3">
+                  <div className="mb-3 input-group">
                     <select
                       name="gender"
                       className="form-control"
                       required
                       disabled={isLoading}
+                      ref={genderSelectRef}
                       style={{
-                        borderRadius: "10px",
+                        borderRadius: "10px 0 0 10px",
                         border: "2px solid #ced4da",
                         padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                         fontSize: "clamp(14px, 2vw, 16px)",
@@ -446,16 +493,24 @@ const medicalSpecialties = [
                       <option value="female">Female</option>
                       <option value="other">Other</option>
                     </select>
+                    <span 
+                      className="input-group-text" 
+                      style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none", cursor: "pointer" }}
+                      onClick={() => genderSelectRef.current.focus()}
+                    >
+                      <i className="bi bi-gender-ambiguous"></i>
+                    </span>
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-3 input-group">
                     <input
                       type="date"
                       name="dateOfBirth"
                       className="form-control"
                       required
                       disabled={isLoading}
+                      ref={dateInputRef}
                       style={{
-                        borderRadius: "10px",
+                        borderRadius: "10px 0 0 10px",
                         border: "2px solid #ced4da",
                         padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                         fontSize: "clamp(14px, 2vw, 16px)",
@@ -463,15 +518,23 @@ const medicalSpecialties = [
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
+                    <span 
+                      className="input-group-text" 
+                      style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none", cursor: "pointer" }}
+                      onClick={() => dateInputRef.current.showPicker()}
+                    >
+                      <i className="bi bi-calendar"></i>
+                    </span>
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-3 input-group">
                     <select
                       name="medicalSpecialty"
                       className="form-control"
                       required
                       disabled={isLoading}
+                      ref={specialtySelectRef}
                       style={{
-                        borderRadius: "10px",
+                        borderRadius: "10px 0 0 10px",
                         border: "2px solid #ced4da",
                         padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                         fontSize: "clamp(14px, 2vw, 16px)",
@@ -488,8 +551,15 @@ const medicalSpecialties = [
                         </option>
                       ))}
                     </select>
+                    <span 
+                      className="input-group-text" 
+                      style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none", cursor: "pointer" }}
+                      onClick={() => specialtySelectRef.current.focus()}
+                    >
+                      <i className="bi bi-heart-pulse"></i>
+                    </span>
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-3 input-group">
                     <input
                       type="file"
                       name="picture"
@@ -498,7 +568,7 @@ const medicalSpecialties = [
                       required
                       disabled={isLoading}
                       style={{
-                        borderRadius: "10px",
+                        borderRadius: "10px 0 0 10px",
                         border: "2px solid #ced4da",
                         padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                         fontSize: "clamp(14px, 2vw, 16px)",
@@ -506,19 +576,24 @@ const medicalSpecialties = [
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
+                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                      <i className="bi bi-image"></i>
+                    </span>
                   </div>
                 </>
               )}
-              <div className="mb-3">
+              <div className="mb-3 input-group">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   className="form-control"
                   placeholder="Password"
                   required
                   disabled={isLoading}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   style={{
-                    borderRadius: "10px",
+                    borderRadius: "10px 0 0 10px",
                     border: "2px solid #ced4da",
                     padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                     fontSize: "clamp(14px, 2vw, 16px)",
@@ -526,9 +601,25 @@ const medicalSpecialties = [
                     transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                   }}
                 />
+                <button
+                  type="button"
+                  className="input-group-text"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                >
+                  <i className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                </button>
               </div>
-              {isSignUp && (
+              {isSignUp && password && (
                 <div className="mb-3">
+                  <div 
+                    className="password-strength-indicator" 
+                    style={{ backgroundColor: getPasswordStrength(password).color }}
+                  ></div>
+                </div>
+              )}
+              {isSignUp && (
+                <div className="mb-3 input-group">
                   <input
                     type="password"
                     name="confirmPassword"
@@ -536,8 +627,10 @@ const medicalSpecialties = [
                     placeholder="Confirm Password"
                     required
                     disabled={isLoading}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     style={{
-                      borderRadius: "10px",
+                      borderRadius: "10px 0 0 10px",
                       border: "2px solid #ced4da",
                       padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                       fontSize: "clamp(14px, 2vw, 16px)",
@@ -545,11 +638,22 @@ const medicalSpecialties = [
                       transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                     }}
                   />
+                  <span 
+                    className="input-group-text" 
+                    style={{ 
+                      borderRadius: "0 10px 10px 0", 
+                      border: "2px solid #ced4da", 
+                      borderLeft: "none",
+                      color: getConfirmPasswordIconColor()
+                    }}
+                  >
+                    <i className="bi bi-lock"></i>
+                  </span>
                 </div>
               )}
               {isSignUp && (
                 <>
-                  <div className="mb-3">
+                  <div className="mb-3 input-group">
                     <input
                       type="text"
                       name="location"
@@ -558,7 +662,7 @@ const medicalSpecialties = [
                       required
                       disabled={isLoading}
                       style={{
-                        borderRadius: "10px",
+                        borderRadius: "10px 0 0 10px",
                         border: "2px solid #ced4da",
                         padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                         fontSize: "clamp(14px, 2vw, 16px)",
@@ -566,8 +670,11 @@ const medicalSpecialties = [
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
+                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                      <i className="bi bi-geo-alt"></i>
+                    </span>
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-3 input-group">
                     <input
                       type="tel"
                       name="phoneNumber"
@@ -576,7 +683,7 @@ const medicalSpecialties = [
                       required
                       disabled={isLoading}
                       style={{
-                        borderRadius: "10px",
+                        borderRadius: "10px 0 0 10px",
                         border: "2px solid #ced4da",
                         padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                         fontSize: "clamp(14px, 2vw, 16px)",
@@ -584,8 +691,11 @@ const medicalSpecialties = [
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
+                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                      <i className="bi bi-telephone"></i>
+                    </span>
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-3 input-group">
                     <input
                       type="tel"
                       name="secondPhoneNumber"
@@ -593,7 +703,7 @@ const medicalSpecialties = [
                       placeholder="Second Phone Number (optional)"
                       disabled={isLoading}
                       style={{
-                        borderRadius: "10px",
+                        borderRadius: "10px 0 0 10px",
                         border: "2px solid #ced4da",
                         padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
                         fontSize: "clamp(14px, 2vw, 16px)",
@@ -601,22 +711,26 @@ const medicalSpecialties = [
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
+                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                      <i className="bi bi-telephone"></i>
+                    </span>
                   </div>
                 </>
               )}
               {!isSignUp && (
                 <div className="mb-3 mb-md-4">
                   <a
-                    href="#"
                     className="small text-decoration-none text-muted"
                     style={{
                       fontSize: "clamp(13px, 2vw, 15px)",
                       transition: "color 0.3s ease",
                       fontFamily: "montserrat",
+                      cursor: "pointer",
+                      color: "#6c757d",
                     }}
                     onClick={handleForgotPassword}
                   >
-                    Forgot your password?
+                    Forgot your password ?
                   </a>
                 </div>
               )}

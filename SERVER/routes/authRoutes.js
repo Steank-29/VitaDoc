@@ -2,13 +2,16 @@ const express = require('express');
 const passport = require('../config/passport');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { signUp, signIn } = require('../controllers/authController');
+const { signUp, signIn, forgotPassword, verifyCode, resetPassword } = require('../controllers/authController');
 
 const router = express.Router();
 
 // Email/Password Routes
 router.post('/signup', signUp);
 router.post('/signin', signIn);
+router.post('/forgot-password', forgotPassword);
+router.post('/verify-code', verifyCode);
+router.post('/reset-password', resetPassword);
 
 // Google Routes
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));

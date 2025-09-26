@@ -3,6 +3,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from './components/Dashboard';
+import ForgetPassword from "./pages/ForgetPassword";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
 
         {/* Example Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/forgetpassword" element={<ForgetPassword />} />
       </Routes>
     </Router>
   );
