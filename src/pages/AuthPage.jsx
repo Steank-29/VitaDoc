@@ -2,15 +2,21 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
-
+import * as THREE from "three";
+import NET from "vanta/dist/vanta.net.min";
+import { useTranslation } from "react-i18next";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "react-toastify/dist/ReactToastify.css";
 
 import Logo from "../assets/logo.png";
 import MedicalImage from "../assets/doctor.png";
+import FlagEN from "../assets/flag-en.png";
+import FlagFR from "../assets/flag-fr.png";
+import FlagAR from "../assets/flag-ar.png";
 
 export default function AuthPage() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
@@ -18,20 +24,57 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State for dropdown visibility
   const dateInputRef = useRef(null);
   const genderSelectRef = useRef(null);
   const specialtySelectRef = useRef(null);
+  const vantaRef = useRef(null);
 
-  // Handle Google OAuth token from redirect
+  // Set English as the default language on mount
+  useEffect(() => {
+    i18n.changeLanguage("en");
+  }, [i18n]);
+
+  // Initialize Vanta effect
+  useEffect(() => {
+    const vantaEffect = NET({
+      el: vantaRef.current,
+      THREE,
+      mouseControls: true,
+      touchControls: true,
+      gyroControls: false,
+      minHeight: 200.0,
+      minWidth: 200.0,
+      scale: 1.0,
+      scaleMobile: 1.0,
+      color: 0x4169e1,
+      backgroundColor: 0xf8f9fa,
+      points: 10.0,
+      maxDistance: 20.0,
+      spacing: 15.0,
+    });
+
+    return () => {
+      if (vantaEffect) vantaEffect.destroy();
+    };
+  }, []);
+
+  // Handle Google OAuth token
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const token = params.get('token');
+    const token = params.get("token");
     if (token) {
-      localStorage.setItem('token', token);
-      toast.success("Signed in with Google successfully!");
-      navigate('/dashboard', { replace: true });
+      localStorage.setItem("token", token);
+      toast.success(t("validation.googleSignInSuccess"));
+      navigate("/dashboard", { replace: true });
     }
-  }, [location, navigate]);
+  }, [location, navigate, t]);
+
+  const languages = [
+    { code: "en", flag: FlagEN, label: t("english") },
+    { code: "fr", flag: FlagFR, label: t("french") },
+    { code: "ar", flag: FlagAR, label: t("arabic") },
+  ];
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const validatePassword = (password) => password.length >= 6;
@@ -50,65 +93,14 @@ export default function AuthPage() {
     return password === confirmPassword ? "#28a745" : "#dc3545";
   };
 
-  const medicalSpecialties = [
-    "Family Medicine Physician",
-    "Internist",
-    "Pediatrician",
-    "General Practitioner",
-    "Geriatrician",
-    "Cardiologist",
-    "Dermatologist",
-    "Endocrinologist",
-    "Gastroenterologist",
-    "Hepatologist",
-    "Nephrologist",
-    "Pulmonologist",
-    "Rheumatologist",
-    "Neurologist",
-    "Allergist",
-    "Immunologist",
-    "Infectious Disease Specialist",
-    "Medical Oncologist",
-    "Radiation Oncologist",
-    "Hematologist",
-    "General Surgeon",
-    "Cardiothoracic Surgeon",
-    "Neurosurgeon",
-    "Orthopedic Surgeon",
-    "Plastic Surgeon",
-    "Transplant Surgeon",
-    "Vascular Surgeon",
-    "Colorectal Surgeon",
-    "Oral Surgeon",
-    "Maxillofacial Surgeon",
-    "Otolaryngologist",
-    "Ophthalmologist",
-    "Urologist",
-    "Gynecologic Oncologist",
-    "Bariatric Surgeon",
-    "Anesthesiologist",
-    "Emergency Medicine Physician",
-    "Hospitalist",
-    "Intensivist",
-    "Critical Care Physician",
-    "Pathologist",
-    "Radiologist",
-    "Interventional Radiologist",
-    "Nuclear Medicine Specialist",
-    "Psychiatrist",
-    "Addiction Psychiatrist",
-    "Physiatrist",
-    "Obstetrician",
-    "Gynecologist",
-    "Maternal-Fetal Medicine Specialist",
-    "Reproductive Endocrinologist",
-    "Adolescent Medicine Specialist",
-    "Neonatologist"
-  ];
+  const medicalSpecialties = Object.keys(t("medicalSpecialties", { returnObjects: true })).map((key) => ({
+    key,
+    label: t(`medicalSpecialties.${key}`),
+  }));
 
   const normalizePhoneNumber = (phone) => {
-    const cleaned = phone.replace(/[\s-]/g, '');
-    return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
+    const cleaned = phone.replace(/[\s-]/g, "");
+    return cleaned.startsWith("+") ? cleaned : `+${cleaned}`;
   };
 
   const handleSignIn = async (e) => {
@@ -118,12 +110,12 @@ export default function AuthPage() {
     const password = e.target.password.value;
 
     if (!validateEmail(email)) {
-      toast.error("Please enter a valid email address");
+      toast.error(t("validation.invalidEmail"));
       setIsLoading(false);
       return;
     }
     if (!validatePassword(password)) {
-      toast.error("Password must be at least 6 characters");
+      toast.error(t("validation.invalidPassword"));
       setIsLoading(false);
       return;
     }
@@ -137,14 +129,14 @@ export default function AuthPage() {
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem("token", data.token);
-        toast.success("Signed in successfully!");
+        toast.success(t("validation.signInSuccess"));
         navigate("/dashboard");
       } else {
-        toast.error(data.message || "Error signing in");
+        toast.error(data.message || t("validation.signInError"));
       }
     } catch (err) {
-      console.error('Signin error:', err);
-      toast.error("Network error, please try again");
+      console.error("Signin error:", err);
+      toast.error(t("validation.networkError"));
     }
     setIsLoading(false);
   };
@@ -167,62 +159,62 @@ export default function AuthPage() {
     const secondPhoneNumber = formData.get("secondPhoneNumber");
 
     if (!validateName(firstName)) {
-      toast.error("First name must be at least 2 characters");
+      toast.error(t("validation.invalidFirstName"));
       setIsLoading(false);
       return;
     }
     if (!validateName(lastName)) {
-      toast.error("Last name must be at least 2 characters");
+      toast.error(t("validation.invalidLastName"));
       setIsLoading(false);
       return;
     }
     if (!validateEmail(email)) {
-      toast.error("Please enter a valid email address");
+      toast.error(t("validation.invalidEmail"));
       setIsLoading(false);
       return;
     }
-    if (!gender || !['male', 'female', 'other'].includes(gender)) {
-      toast.error("Please select a valid gender");
+    if (!gender || !["male", "female", "other"].includes(gender)) {
+      toast.error(t("validation.invalidGender"));
       setIsLoading(false);
       return;
     }
     if (!dateOfBirth || isNaN(new Date(dateOfBirth).getTime())) {
-      toast.error("Please enter a valid date of birth");
+      toast.error(t("validation.invalidDateOfBirth"));
       setIsLoading(false);
       return;
     }
-    if (!medicalSpecialty || !medicalSpecialties.includes(medicalSpecialty)) {
-      toast.error("Please select a valid medical specialty");
+    if (!medicalSpecialty || !medicalSpecialties.some((spec) => spec.key === medicalSpecialty)) {
+      toast.error(t("validation.invalidMedicalSpecialty"));
       setIsLoading(false);
       return;
     }
     if (!picture || picture.size === 0) {
-      toast.error("Please upload a valid profile picture");
+      toast.error(t("validation.invalidPicture"));
       setIsLoading(false);
       return;
     }
     if (!validatePassword(password)) {
-      toast.error("Password must be at least 6 characters");
+      toast.error(t("validation.invalidPassword"));
       setIsLoading(false);
       return;
     }
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error(t("validation.passwordsDontMatch"));
       setIsLoading(false);
       return;
     }
     if (!location) {
-      toast.error("Please enter your location");
+      toast.error(t("validation.invalidLocation"));
       setIsLoading(false);
       return;
     }
     if (!validatePhone(phoneNumber)) {
-      toast.error("Please enter a valid phone number (10-15 digits)");
+      toast.error(t("validation.invalidPhoneNumber"));
       setIsLoading(false);
       return;
     }
     if (secondPhoneNumber && !validatePhone(secondPhoneNumber)) {
-      toast.error("Second phone number must be valid (10-15 digits)");
+      toast.error(t("validation.invalidSecondPhoneNumber"));
       setIsLoading(false);
       return;
     }
@@ -230,19 +222,19 @@ export default function AuthPage() {
     try {
       const res = await fetch("http://localhost:5000/auth/signup", {
         method: "POST",
-        body: formData, // Send FormData for multipart/form-data
+        body: formData,
       });
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem("token", data.token);
-        toast.success("Signed up successfully!");
+        toast.success(t("validation.signUpSuccess"));
         navigate("/dashboard");
       } else {
-        toast.error(data.message || "Error signing up");
+        toast.error(data.message || t("validation.signUpError"));
       }
     } catch (err) {
-      console.error('Signup error:', err);
-      toast.error("Network error, please try again");
+      console.error("Signup error:", err);
+      toast.error(t("validation.networkError"));
     }
     setIsLoading(false);
   };
@@ -254,11 +246,18 @@ export default function AuthPage() {
 
   const handleForgotPassword = (e) => {
     e.preventDefault();
-    window.location.href = "/forgetpassword"
+    window.location.href = "/forgetpassword";
+  };
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+    setIsDropdownOpen(false);
   };
 
   return (
     <div
+      ref={vantaRef}
+      dir={i18n.language === "ar" ? "rtl" : "ltr"}
       style={{
         backgroundColor: "#f8f9fa",
         minHeight: "100vh",
@@ -267,8 +266,75 @@ export default function AuthPage() {
         alignItems: "center",
         justifyContent: "center",
         padding: "16px",
+        position: "relative",
+        zIndex: 1,
       }}
     >
+      {/* Flag-based Language Switcher */}
+      <div
+        style={{
+          position: "absolute",
+          top: "20px",
+          right: i18n.language === "ar" ? "auto" : "20px",
+          left: i18n.language === "ar" ? "20px" : "auto",
+          zIndex: 3,
+        }}
+      >
+        <button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          style={{
+            background: "none",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+          }}
+          aria-label={t(`language.${i18n.language}`)}
+        >
+          <img
+            src={languages.find(lang => lang.code === i18n.language)?.flag}
+            alt={t(`language.${i18n.language}`)}
+            style={{ width: "24px", height: "24px" }}
+          />
+        </button>
+        {isDropdownOpen && (
+          <div
+            style={{
+              position: "absolute",
+              top: "30px",
+              left: i18n.language === "ar" ? "auto" : 0,
+              right: i18n.language === "ar" ? 0 : "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              padding: "8px",
+              backgroundColor: "#ffffff",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              borderRadius: "4px",
+            }}
+          >
+            {languages.map(lang => (
+              <button
+                key={lang.code}
+                onClick={() => changeLanguage(lang.code)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                }}
+                aria-label={lang.label}
+              >
+                <img
+                  src={lang.flag}
+                  alt={lang.label}
+                  style={{ width: "24px", height: "24px" }}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <motion.div
         className="auth-wrapper d-flex flex-column flex-md-row position-relative bg-white shadow-lg rounded-4 overflow-hidden mx-auto"
         initial={{ opacity: 0, scale: 0.95 }}
@@ -279,6 +345,7 @@ export default function AuthPage() {
           maxWidth: "1200px",
           minHeight: "500px",
           maxHeight: "90vh",
+          zIndex: 2,
         }}
       >
         <div
@@ -292,7 +359,7 @@ export default function AuthPage() {
           <div className="mb-2">
             <img
               src={Logo}
-              alt="VitaDoc Logo"
+              alt={t("title")}
               style={{
                 width: "clamp(100px, 10vw, 150px)",
                 height: "auto",
@@ -304,7 +371,7 @@ export default function AuthPage() {
           <div className="d-flex justify-content-center align-items-center flex-grow-1 my-3">
             <img
               src={MedicalImage}
-              alt="Medical Illustration"
+              alt={t("medicalIllustration")}
               style={{
                 width: "100%",
                 maxWidth: "380px",
@@ -328,7 +395,7 @@ export default function AuthPage() {
               onMouseLeave={(e) => (e.target.style.color = "#e3f2fd")}
             >
               <i className="bi bi-copyright me-1"></i>
-              2026, VitaDoc. All rights reserved
+              {t("copyright")}
             </p>
           </div>
         </div>
@@ -345,9 +412,9 @@ export default function AuthPage() {
             overflow: "hidden",
           }}
         >
-          <div 
-            className="w-100" 
-            style={{ 
+          <div
+            className="w-100"
+            style={{
               maxWidth: "400px",
               maxHeight: "100%",
               overflowY: "auto",
@@ -360,7 +427,8 @@ export default function AuthPage() {
                 div[style*="overflowY: auto"]::-webkit-scrollbar {
                   display: none;
                 }
-                .input-group .form-control:focus + .input-group-text {
+                .input-group .form-control:focus + .input-group-text,
+                .input-group .form-select:focus + .input-group-text {
                   border-color: #4169E1;
                   box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
                 }
@@ -375,7 +443,7 @@ export default function AuthPage() {
             <div className="text-end mb-4 d-md-none">
               <img
                 src={Logo}
-                alt="VitaDoc Logo"
+                alt={t("title")}
                 style={{ width: "60px", height: "60px" }}
                 className="rounded img-fluid"
               />
@@ -388,7 +456,7 @@ export default function AuthPage() {
                 fontSize: "clamp(28px, 5vw, 42px)",
               }}
             >
-              Doctor Connect
+              {t("title")}
             </h2>
             <p
               className="text-center text-muted mb-3 mb-md-4"
@@ -398,7 +466,7 @@ export default function AuthPage() {
                 fontSize: "clamp(14px, 2vw, 17px)",
               }}
             >
-              {isSignUp ? "Create a new account" : "Sign in to your account to continue"}
+              {isSignUp ? t("signUpPrompt") : t("signInPrompt")}
             </p>
             <form onSubmit={isSignUp ? handleSignUp : handleSignIn}>
               {isSignUp && (
@@ -408,7 +476,7 @@ export default function AuthPage() {
                       type="text"
                       name="firstName"
                       className="form-control"
-                      placeholder="First Name"
+                      placeholder={t("firstName")}
                       required
                       disabled={isLoading}
                       style={{
@@ -419,8 +487,12 @@ export default function AuthPage() {
                         boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
+                      
                     />
-                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                    <span
+                      className="input-group-text"
+                      style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                    >
                       <i className="bi bi-person"></i>
                     </span>
                   </div>
@@ -429,7 +501,7 @@ export default function AuthPage() {
                       type="text"
                       name="lastName"
                       className="form-control"
-                      placeholder="Last Name"
+                      placeholder={t("lastName")}
                       required
                       disabled={isLoading}
                       style={{
@@ -441,7 +513,10 @@ export default function AuthPage() {
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
-                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                    <span
+                      className="input-group-text"
+                      style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                    >
                       <i className="bi bi-person"></i>
                     </span>
                   </div>
@@ -452,7 +527,7 @@ export default function AuthPage() {
                   type="email"
                   name="email"
                   className="form-control"
-                  placeholder="Email address"
+                  placeholder={t("email")}
                   required
                   disabled={isLoading}
                   style={{
@@ -464,7 +539,10 @@ export default function AuthPage() {
                     transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                   }}
                 />
-                <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                <span
+                  className="input-group-text"
+                  style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                >
                   <i className="bi bi-envelope"></i>
                 </span>
               </div>
@@ -487,14 +565,14 @@ export default function AuthPage() {
                       }}
                     >
                       <option value="" disabled selected>
-                        Select Gender
+                        {t("gender")}
                       </option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
+                      <option value="male">{t("male")}</option>
+                      <option value="female">{t("female")}</option>
+                      <option value="other">{t("other")}</option>
                     </select>
-                    <span 
-                      className="input-group-text" 
+                    <span
+                      className="input-group-text"
                       style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none", cursor: "pointer" }}
                       onClick={() => genderSelectRef.current.focus()}
                     >
@@ -518,8 +596,8 @@ export default function AuthPage() {
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
-                    <span 
-                      className="input-group-text" 
+                    <span
+                      className="input-group-text"
                       style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none", cursor: "pointer" }}
                       onClick={() => dateInputRef.current.showPicker()}
                     >
@@ -543,16 +621,16 @@ export default function AuthPage() {
                       }}
                     >
                       <option value="" disabled selected>
-                        Select Medical Specialty
+                        {t("medicalSpecialty")}
                       </option>
-                      {medicalSpecialties.map((specialty) => (
-                        <option key={specialty} value={specialty}>
-                          {specialty}
+                      {medicalSpecialties.map(({ key, label }) => (
+                        <option key={key} value={key}>
+                          {label}
                         </option>
                       ))}
                     </select>
-                    <span 
-                      className="input-group-text" 
+                    <span
+                      className="input-group-text"
                       style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none", cursor: "pointer" }}
                       onClick={() => specialtySelectRef.current.focus()}
                     >
@@ -576,7 +654,10 @@ export default function AuthPage() {
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
-                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                    <span
+                      className="input-group-text"
+                      style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                    >
                       <i className="bi bi-image"></i>
                     </span>
                   </div>
@@ -587,7 +668,7 @@ export default function AuthPage() {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   className="form-control"
-                  placeholder="Password"
+                  placeholder={t("password")}
                   required
                   disabled={isLoading}
                   value={password}
@@ -612,8 +693,8 @@ export default function AuthPage() {
               </div>
               {isSignUp && password && (
                 <div className="mb-3">
-                  <div 
-                    className="password-strength-indicator" 
+                  <div
+                    className="password-strength-indicator"
                     style={{ backgroundColor: getPasswordStrength(password).color }}
                   ></div>
                 </div>
@@ -624,7 +705,7 @@ export default function AuthPage() {
                     type="password"
                     name="confirmPassword"
                     className="form-control"
-                    placeholder="Confirm Password"
+                    placeholder={t("confirmPassword")}
                     required
                     disabled={isLoading}
                     value={confirmPassword}
@@ -638,13 +719,13 @@ export default function AuthPage() {
                       transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                     }}
                   />
-                  <span 
-                    className="input-group-text" 
-                    style={{ 
-                      borderRadius: "0 10px 10px 0", 
-                      border: "2px solid #ced4da", 
+                  <span
+                    className="input-group-text"
+                    style={{
+                      borderRadius: "0 10px 10px 0",
+                      border: "2px solid #ced4da",
                       borderLeft: "none",
-                      color: getConfirmPasswordIconColor()
+                      color: getConfirmPasswordIconColor(),
                     }}
                   >
                     <i className="bi bi-lock"></i>
@@ -658,7 +739,7 @@ export default function AuthPage() {
                       type="text"
                       name="location"
                       className="form-control"
-                      placeholder="Location (e.g., City, Country)"
+                      placeholder={t("location")}
                       required
                       disabled={isLoading}
                       style={{
@@ -670,7 +751,10 @@ export default function AuthPage() {
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
-                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                    <span
+                      className="input-group-text"
+                      style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                    >
                       <i className="bi bi-geo-alt"></i>
                     </span>
                   </div>
@@ -679,7 +763,7 @@ export default function AuthPage() {
                       type="tel"
                       name="phoneNumber"
                       className="form-control"
-                      placeholder="Phone Number (e.g., +1234567890)"
+                      placeholder={t("phoneNumber")}
                       required
                       disabled={isLoading}
                       style={{
@@ -691,7 +775,10 @@ export default function AuthPage() {
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
-                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                    <span
+                      className="input-group-text"
+                      style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                    >
                       <i className="bi bi-telephone"></i>
                     </span>
                   </div>
@@ -700,7 +787,7 @@ export default function AuthPage() {
                       type="tel"
                       name="secondPhoneNumber"
                       className="form-control"
-                      placeholder="Second Phone Number (optional)"
+                      placeholder={t("secondPhoneNumber")}
                       disabled={isLoading}
                       style={{
                         borderRadius: "10px 0 0 10px",
@@ -711,7 +798,10 @@ export default function AuthPage() {
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     />
-                    <span className="input-group-text" style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}>
+                    <span
+                      className="input-group-text"
+                      style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                    >
                       <i className="bi bi-telephone"></i>
                     </span>
                   </div>
@@ -730,7 +820,7 @@ export default function AuthPage() {
                     }}
                     onClick={handleForgotPassword}
                   >
-                    Forgot your password ?
+                    {t("forgotPassword")}
                   </a>
                 </div>
               )}
@@ -750,21 +840,19 @@ export default function AuthPage() {
               >
                 {isLoading ? (
                   <>
-                    <span
-                      className="spinner-border spinner-border-sm me-2"
-                      role="status"
-                      aria-hidden="true"
-                    ></span>
-                    {isSignUp ? "Signing Up..." : "Signing In..."}
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    {isSignUp ? t("signingUp") : t("signingIn")}
                   </>
+                ) : isSignUp ? (
+                  t("signUp")
                 ) : (
-                  (isSignUp ? "Sign Up" : "Sign In")
+                  t("signIn")
                 )}
               </button>
             </form>
             <div className="d-flex align-items-center mb-3">
               <hr className="flex-grow-1" style={{ borderColor: "#e9ecef" }} />
-              <span className="px-3 text-muted small">or</span>
+              <span className="px-3 text-muted small">{t("orWith")}</span>
               <hr className="flex-grow-1" style={{ borderColor: "#e9ecef" }} />
             </div>
             <button
@@ -797,13 +885,7 @@ export default function AuthPage() {
                 }
               }}
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 48 48"
-                className="me-2"
-                style={{ flexShrink: 0 }}
-              >
+              <svg width="18" height="18" viewBox="0 0 48 48" className="me-2" style={{ flexShrink: 0 }}>
                 <path
                   fill="#4285F4"
                   d="M45.1 24c0-1.2-.1-2.3-.3-3.5H24v6.8h9.7c-0.4 2.1-1.6 3.9-3.4 5.1l5.5 4.3c3.2-3 5.1-7.4 5.1-12.3z"
@@ -821,11 +903,11 @@ export default function AuthPage() {
                   d="M24 9.2c2.8 0 5.3 1 7.3 2.8l5.4-5.3C34.2 2.8 29.8 1 24 1s-10.2 1.8-13.8 5.2L15.6 11c2.2-2 5-3.8 8.4-3.8z"
                 />
               </svg>
-              Sign in with Google
+              {t("signInWithGoogle")}
             </button>
             <div className="text-center mt-3">
               <p className="mb-0 text-muted small">
-                {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+                {isSignUp ? t("alreadyHaveAccount") : t("dontHaveAccount")}{" "}
                 <a
                   href="#"
                   className="text-primary fw-semibold"
@@ -840,7 +922,7 @@ export default function AuthPage() {
                     setIsSignUp(!isSignUp);
                   }}
                 >
-                  {isSignUp ? "Sign in here" : "Sign up here"}
+                  {isSignUp ? t("signInHere") : t("signUpHere")}
                 </a>
               </p>
             </div>

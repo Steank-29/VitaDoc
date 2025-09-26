@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from './components/Dashboard';
 import ForgetPassword from "./pages/ForgetPassword";
+import Navbar from "./containers/Navbar";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         {/* Example Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/forgetpassword" element={<ForgetPassword />} />
+         <Route path="/navbar" element={<Navbar />} />
       </Routes>
     </Router>
   );
