@@ -254,7 +254,7 @@ export default function AuthPage() {
 
   const handleForgotPassword = (e) => {
     e.preventDefault();
-    window.location.href = "/forgetpassword"
+    window.location.href = "https://vita-doc.vercel.app/forgetpassword"
   };
 
   return (
