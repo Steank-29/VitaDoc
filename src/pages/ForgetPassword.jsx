@@ -5,16 +5,28 @@ import { toast } from "react-toastify";
 import * as THREE from "three";
 import NET from "vanta/dist/vanta.net.min";
 import { useTranslation } from "react-i18next";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css";
-import "react-toastify/dist/ReactToastify.css";
-
+import {
+  Button,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Box,
+  Typography,
+  Menu,
+  MenuItem,
+  CircularProgress,
+  Container,
+  Paper,
+  Grid,
+} from "@mui/material";
+import { auth, RecaptchaVerifier, signInWithPhoneNumber } from "../config/Firebase.config";
 import Logo from "../assets/logo.png";
 import MedicalImage from "../assets/doctor.png";
 import FlagEN from "../assets/flag-en.png";
 import FlagFR from "../assets/flag-fr.png";
 import FlagAR from "../assets/flag-ar.png";
-import { auth, RecaptchaVerifier, signInWithPhoneNumber } from "../config/Firebase.config";
+import "react-toastify/dist/ReactToastify.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 export default function ForgetPassword() {
   const { t, i18n } = useTranslation();
@@ -29,7 +41,7 @@ export default function ForgetPassword() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
   const recaptchaVerifier = useRef(null);
   const vantaRef = useRef(null);
 
@@ -81,8 +93,8 @@ export default function ForgetPassword() {
   const validatePassword = (password) => password.length >= 6;
 
   const normalizePhoneNumber = (phone) => {
-    const cleaned = phone.replace(/[\s-]/g, '');
-    return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
+    const cleaned = phone.replace(/[\s-]/g, "");
+    return cleaned.startsWith("+") ? cleaned : `+${cleaned}`;
   };
 
   const handleSendCode = async (e) => {
@@ -102,8 +114,12 @@ export default function ForgetPassword() {
         toast.success(t("validation.codeSentPhone"));
         setStep(2);
       } catch (err) {
-        console.error('Firebase send OTP error:', err);
-        toast.error(err.message.includes('auth/invalid-phone-number') ? t("validation.invalidPhoneNumber") : t("validation.errorSendingCode"));
+        console.error("Firebase send OTP error:", err);
+        toast.error(
+          err.message.includes("auth/invalid-phone-number")
+            ? t("validation.invalidPhoneNumber")
+            : t("validation.errorSendingCode")
+        );
       }
     } else {
       if (!validateEmail(contact)) {
@@ -125,7 +141,7 @@ export default function ForgetPassword() {
           toast.error(data.message || t("validation.errorSendingCode"));
         }
       } catch (err) {
-        console.error('Send code error:', err);
+        console.error("Send code error:", err);
         toast.error(t("validation.networkError"));
       }
     }
@@ -145,12 +161,16 @@ export default function ForgetPassword() {
     if (usePhone) {
       try {
         const credential = await confirmationResult.confirm(code);
-        const idToken = await credential.user.getIdToken();
+        await credential.user.getIdToken();
         setStep(3);
         toast.success(t("validation.codeVerified"));
       } catch (err) {
-        console.error('Firebase verify OTP error:', err);
-        toast.error(err.message.includes('auth/invalid-verification-code') ? t("validation.invalidCode") : t("validation.errorVerifyingCode"));
+        console.error("Firebase verify OTP error:", err);
+        toast.error(
+          err.message.includes("auth/invalid-verification-code")
+            ? t("validation.invalidCode")
+            : t("validation.errorVerifyingCode")
+        );
       }
     } else {
       try {
@@ -167,7 +187,7 @@ export default function ForgetPassword() {
           toast.error(data.message || t("validation.invalidCode"));
         }
       } catch (err) {
-        console.error('Verify code error:', err);
+        console.error("Verify code error:", err);
         toast.error(t("validation.networkError"));
       }
     }
@@ -192,7 +212,7 @@ export default function ForgetPassword() {
     if (usePhone) {
       try {
         const user = auth.currentUser;
-        if (!user) throw new Error('No verified user');
+        if (!user) throw new Error("No verified user");
         const idToken = await user.getIdToken();
         const res = await fetch("http://localhost:5000/auth/reset-password", {
           method: "POST",
@@ -207,7 +227,7 @@ export default function ForgetPassword() {
           toast.error(data.message || t("validation.errorResettingPassword"));
         }
       } catch (err) {
-        console.error('Firebase reset error:', err);
+        console.error("Firebase reset error:", err);
         toast.error(t("validation.errorResettingPassword"));
       }
     } else {
@@ -225,7 +245,7 @@ export default function ForgetPassword() {
           toast.error(data.message || t("validation.errorResettingPassword"));
         }
       } catch (err) {
-        console.error('Reset password error:', err);
+        console.error("Reset password error:", err);
         toast.error(t("validation.networkError"));
       }
     }
@@ -242,30 +262,32 @@ export default function ForgetPassword() {
     setContact("");
   };
 
+  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
-    setIsDropdownOpen(false);
+    handleMenuClose();
   };
 
   return (
-    <div
+    <Box
       ref={vantaRef}
       dir={i18n.language === "ar" ? "rtl" : "ltr"}
-      style={{
-        backgroundColor: "#f8f9fa",
+      sx={{
+        bgcolor: "#f8f9fa",
         minHeight: "100vh",
         minWidth: "100vw",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "16px",
+        p: 2,
         position: "relative",
         zIndex: 1,
       }}
     >
-      {/* Flag-based Language Switcher */}
-      <div
-        style={{
+      {/* Language Switcher */}
+      <Box
+        sx={{
           position: "absolute",
           top: "20px",
           right: i18n.language === "ar" ? "auto" : "20px",
@@ -273,417 +295,446 @@ export default function ForgetPassword() {
           zIndex: 3,
         }}
       >
-        <button
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          style={{
-            background: "none",
-            border: "none",
-            padding: 0,
-            cursor: "pointer",
-          }}
+        <IconButton
+          onClick={handleMenuOpen}
           aria-label={t(`language.${i18n.language}`)}
+          sx={{ p: 0 }}
         >
           <img
-            src={languages.find(lang => lang.code === i18n.language)?.flag}
+            src={languages.find((lang) => lang.code === i18n.language)?.flag}
             alt={t(`language.${i18n.language}`)}
-            style={{ width: "24px", height: "24px" }}
+            style={{ width: 24, height: 24 }}
           />
-        </button>
-        {isDropdownOpen && (
-          <div
-            style={{
-              position: "absolute",
-              top: "30px",
-              left: i18n.language === "ar" ? "auto" : 0,
-              right: i18n.language === "ar" ? 0 : "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              padding: "8px",
-              backgroundColor: "#ffffff",
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          sx={{
+            "& .MuiPaper-root": {
               boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
               borderRadius: "4px",
-            }}
-          >
-            {languages.map(lang => (
-              <button
-                key={lang.code}
-                onClick={() => changeLanguage(lang.code)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                }}
-                aria-label={lang.label}
-              >
-                <img
-                  src={lang.flag}
-                  alt={lang.label}
-                  style={{ width: "24px", height: "24px" }}
-                />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+              p: 1,
+            },
+          }}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: i18n.language === "ar" ? "right" : "left",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: i18n.language === "ar" ? "right" : "left",
+          }}
+        >
+          {languages.map((lang) => (
+            <MenuItem
+              key={lang.code}
+              onClick={() => changeLanguage(lang.code)}
+              sx={{ p: 0 }}
+            >
+              <IconButton aria-label={lang.label}>
+                <img src={lang.flag} alt={lang.label} style={{ width: 24, height: 24 }} />
+              </IconButton>
+            </MenuItem>
+          ))}
+        </Menu>
+      </Box>
 
       <motion.div
-        className="auth-wrapper d-flex flex-column flex-md-row position-relative bg-white shadow-lg rounded-4 overflow-hidden mx-auto"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
-        style={{
-          width: "100%",
-          maxWidth: "1200px",
-          minHeight: "500px",
-          maxHeight: "90vh",
-          zIndex: 2,
-        }}
+        style={{ width: "100%", maxWidth: 1200, minHeight: 500, maxHeight: "90vh", zIndex: 2 }}
       >
-        <div
-          className="d-flex flex-column p-4 p-md-5"
-          style={{
-            backgroundColor: "#4169E1",
-            flex: "0 0 35%",
-            display: window.innerWidth < 768 ? "none" : "flex",
-          }}
-        >
-          <div className="mb-2">
-            <img
-              src={Logo}
-              alt={t("title")}
-              style={{
-                width: "clamp(100px, 10vw, 150px)",
-                height: "auto",
-                aspectRatio: "150/80",
-              }}
-              className="rounded img-fluid"
-            />
-          </div>
-          <div className="d-flex justify-content-center align-items-center flex-grow-1 my-3">
-            <img
-              src={MedicalImage}
-              alt={t("medicalIllustration")}
-              style={{
-                width: "100%",
-                maxWidth: "380px",
-                height: "auto",
-                aspectRatio: "380/420",
-              }}
-              className="img-fluid rounded"
-            />
-          </div>
-          <div className="text-center mt-auto">
-            <p
-              className="mb-0 small"
-              style={{
-                color: "#e3f2fd",
-                fontSize: "clamp(10px, 1.2vw, 12px)",
-                letterSpacing: "1px",
-                fontWeight: "300",
-                transition: "color 0.3s ease",
-              }}
-              onMouseEnter={(e) => (e.target.style.color = "#d0e7ff")}
-              onMouseLeave={(e) => (e.target.style.color = "#e3f2fd")}
-            >
-              <i className="bi bi-copyright me-1"></i>
-              {t("copyright")}
-            </p>
-          </div>
-        </div>
-        <motion.div
-          className="d-flex flex-column justify-content-center align-items-center p-3 p-md-4 p-lg-5"
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          style={{
-            flex: "0 0 65%",
-            backgroundColor: "#ffffff",
-            minHeight: "500px",
-            maxHeight: "90vh",
+        <Paper
+          elevation={3}
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            borderRadius: 4,
             overflow: "hidden",
+            bgcolor: "white",
           }}
         >
-          <div
-            className="w-100"
-            style={{
-              maxWidth: "400px",
-              maxHeight: "100%",
-              overflowY: "auto",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
+          <Box
+            sx={{
+              bgcolor: "#4169E1",
+              flex: { md: "0 0 35%" },
+              display: { xs: "none", md: "flex" },
+              flexDirection: "column",
+              p: { md: 5, xs: 4 },
             }}
           >
-            <style>
-              {`
-                div[style*="overflowY: auto"]::-webkit-scrollbar {
-                  display: none;
-                }
-                .input-group .form-control:focus + .input-group-text {
-                  border-color: #4169E1;
-                  box-shadow: 0 0 0 0.2rem rgba(65, 105, 225, 0.25);
-                }
-                .password-strength-indicator {
-                  height: 4px;
-                  width: 100%;
-                  margin-top: 5px;
-                  border-radius: 2px;
-                }
-              `}
-            </style>
-            <div className="text-end mb-4 d-md-none">
+            <Box sx={{ mb: 2 }}>
               <img
                 src={Logo}
                 alt={t("title")}
-                style={{ width: "60px", height: "60px" }}
-                className="rounded img-fluid"
+                style={{
+                  width: "clamp(100px, 10vw, 150px)",
+                  height: "auto",
+                  aspectRatio: "150/80",
+                  borderRadius: 4,
+                }}
               />
-            </div>
-            <h2
-              className="mb-3 mb-md-4 text-center text-dark fw-bold"
-              style={{
-                transition: "color 0.3s ease",
-                fontFamily: "montserrat",
-                fontSize: "clamp(28px, 5vw, 42px)",
+            </Box>
+            <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center", alignItems: "center", my: 3 }}>
+              <img
+                src={MedicalImage}
+                alt={t("medicalIllustration")}
+                style={{
+                  width: "100%",
+                  maxWidth: 380,
+                  height: "auto",
+                  aspectRatio: "380/420",
+                  borderRadius: 4,
+                }}
+              />
+            </Box>
+            <Box sx={{ textAlign: "center", mt: "auto" }}>
+              <Typography
+                sx={{
+                  color: "#e3f2fd",
+                  fontSize: "clamp(10px, 1.2vw, 12px)",
+                  letterSpacing: "1px",
+                  fontWeight: 300,
+                  transition: "color 0.3s ease",
+                  "&:hover": { color: "#d0e7ff" },
+                }}
+              >
+                <i className="bi bi-copyright" style={{ marginRight: 4 }} />
+                {t("copyright")}
+              </Typography>
+            </Box>
+          </Box>
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            style={{
+              flex: "0 0 65%",
+              bgcolor: "white",
+              minHeight: 500,
+              maxHeight: "90vh",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              p: { xs: 3, md: 4, lg: 5 },
+            }}
+          >
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 400,
+                maxHeight: "100%",
+                overflowY: "auto",
+                scrollbarWidth: "none",
+                "&::-webkit-scrollbar": { display: "none" },
               }}
             >
-              {t("resetPassword")}
-            </h2>
-            <p
-              className="text-center text-muted mb-3 mb-md-4"
-              style={{
-                transition: "color 0.3s ease",
-                fontFamily: "montserrat",
-                fontSize: "clamp(14px, 2vw, 17px)",
-              }}
-            >
-              {step === 1 && t("enterContactPrompt")}
-              {step === 2 && t("enterCodePrompt")}
-              {step === 3 && t("createNewPasswordPrompt")}
-            </p>
-            <div id="recaptcha-container" style={{ display: "none" }}></div>
-            {step === 1 && (
-              <form onSubmit={handleSendCode}>
-                <div className="mb-3 input-group">
-                  <input
+              <style>
+                {`
+                  .password-strength-indicator {
+                    height: 4px;
+                    width: 100%;
+                    margin-top: 5px;
+                    border-radius: 2px;
+                  }
+                `}
+              </style>
+              <Box sx={{ textAlign: "end", mb: 4, display: { md: "none" } }}>
+                <img
+                  src={Logo}
+                  alt={t("title")}
+                  style={{ width: 60, height: 60, borderRadius: 4 }}
+                />
+              </Box>
+              <Typography
+                variant="h4"
+                sx={{
+                  mb: { xs: 3, md: 4 },
+                  textAlign: "center",
+                  color: "black",
+                  fontWeight: 700,
+                  fontFamily: "Montserrat, sans-serif",
+                  fontSize: "clamp(28px, 5vw, 42px)",
+                  transition: "color 0.3s ease",
+                }}
+              >
+                {t("resetPassword")}
+              </Typography>
+              <Typography
+                sx={{
+                  textAlign: "center",
+                  color: "text.secondary",
+                  mb: { xs: 3, md: 4 },
+                  fontFamily: "Montserrat, sans-serif",
+                  fontSize: "clamp(14px, 2vw, 17px)",
+                  transition: "color 0.3s ease",
+                }}
+              >
+                {step === 1 && t("enterContactPrompt")}
+                {step === 2 && t("enterCodePrompt")}
+                {step === 3 && t("createNewPasswordPrompt")}
+              </Typography>
+              <Box id="recaptcha-container" sx={{ display: "none" }} />
+              {step === 1 && (
+                <form onSubmit={handleSendCode}>
+                  <TextField
+                    fullWidth
                     type={usePhone ? "tel" : "email"}
-                    className="form-control"
                     placeholder={usePhone ? t("phoneNumber") : t("email")}
                     value={contact}
                     onChange={(e) => setContact(e.target.value)}
                     required
                     disabled={isLoading}
-                    style={{
-                      borderRadius: "10px 0 0 10px",
-                      border: "2px solid #ced4da",
-                      padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
-                      fontSize: "clamp(14px, 2vw, 16px)",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                      transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+                    sx={{
+                      mb: 3,
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "10px",
+                        border: "2px solid #ced4da",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                        "&:hover fieldset": { borderColor: "#4169E1" },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#4169E1",
+                          boxShadow: "0 0 0 0.2rem rgba(65, 105, 225, 0.25)",
+                        },
+                      },
+                      "& .MuiInputBase-input": {
+                        p: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
+                        fontSize: "clamp(14px, 2vw, 16px)",
+                      },
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <i className={usePhone ? "bi bi-telephone" : "bi bi-envelope"} />
+                        </InputAdornment>
+                      ),
                     }}
                   />
-                  <span
-                    className="input-group-text"
-                    style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                  <Box sx={{ textAlign: "center", mb: 3 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {t("orWith")}{" "}
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (usePhone) switchToEmail();
+                          else switchToPhone();
+                        }}
+                        style={{
+                          color: "#4169E1",
+                          fontWeight: 600,
+                          fontSize: "clamp(13px, 2vw, 14px)",
+                          textDecoration: "none",
+                        }}
+                      >
+                        {usePhone ? t("email") : t("phoneNumber")}
+                      </a>
+                    </Typography>
+                  </Box>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={isLoading}
+                    sx={{
+                      bgcolor: "#4169E1",
+                      borderRadius: "8px",
+                      p: "12px",
+                      fontWeight: 600,
+                      color: "white",
+                      opacity: isLoading ? 0.7 : 1,
+                      mb: 3,
+                      "&:hover": { bgcolor: "#3658C1" },
+                    }}
+                    startIcon={isLoading && <CircularProgress size={20} color="inherit" />}
                   >
-                    <i className={usePhone ? "bi bi-telephone" : "bi bi-envelope"}></i>
-                  </span>
-                </div>
-                <div className="text-center mb-3">
-                  <span className="small text-muted">
-                    {t("orWith")}{" "}
-                    <a
-                      href="#"
-                      className="text-primary fw-semibold"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (usePhone) switchToEmail();
-                        else switchToPhone();
-                      }}
-                      style={{ fontSize: "clamp(13px, 2vw, 14px)" }}
-                    >
-                      {usePhone ? t("email") : t("phoneNumber")}
-                    </a>
-                  </span>
-                </div>
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100 mb-3"
-                  disabled={isLoading}
-                  style={{
-                    backgroundColor: "#4169E1",
-                    borderColor: "#4169E1",
-                    borderRadius: "8px",
-                    padding: "12px",
-                    fontWeight: "600",
-                    color: "white",
-                    opacity: isLoading ? 0.7 : 1,
-                  }}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      {t("sendingCode")}
-                    </>
-                  ) : (
-                    t("sendCode")
-                  )}
-                </button>
-              </form>
-            )}
-            {step === 2 && (
-              <form onSubmit={handleVerifyCode}>
-                <div className="mb-3 input-group">
-                  <input
+                    {isLoading ? t("sendingCode") : t("sendCode")}
+                  </Button>
+                </form>
+              )}
+              {step === 2 && (
+                <form onSubmit={handleVerifyCode}>
+                  <TextField
+                    fullWidth
                     type="text"
-                    className="form-control"
-                    placeholder={t("enterCode")}
+                    placeholder={t("Enter Code")}
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    maxLength={6}
+                    inputProps={{ maxLength: 6 }}
                     required
                     disabled={isLoading}
-                    style={{
-                      borderRadius: "10px 0 0 10px",
-                      border: "2px solid #ced4da",
-                      padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
-                      fontSize: "clamp(14px, 2vw, 16px)",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                      transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+                    sx={{
+                      mb: 3,
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "10px",
+                        border: "2px solid #ced4da",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                        "&:hover fieldset": { borderColor: "#4169E1" },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#4169E1",
+                          boxShadow: "0 0 0 0.2rem rgba(65, 105, 225, 0.25)",
+                        },
+                      },
+                      "& .MuiInputBase-input": {
+                        p: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
+                        fontSize: "clamp(14px, 2vw, 16px)",
+                      },
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <i className="bi bi-shield-check" />
+                        </InputAdornment>
+                      ),
                     }}
                   />
-                  <span
-                    className="input-group-text"
-                    style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={isLoading}
+                    sx={{
+                      bgcolor: "#4169E1",
+                      borderRadius: "8px",
+                      p: "12px",
+                      fontWeight: 600,
+                      color: "white",
+                      opacity: isLoading ? 0.7 : 1,
+                      mb: 3,
+                      "&:hover": { bgcolor: "#3658C1" },
+                    }}
+                    startIcon={isLoading && <CircularProgress size={20} color="inherit" />}
                   >
-                    <i className="bi bi-shield-check"></i>
-                  </span>
-                </div>
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100 mb-3"
-                  disabled={isLoading}
-                  style={{
-                    backgroundColor: "#4169E1",
-                    borderColor: "#4169E1",
-                    borderRadius: "8px",
-                    padding: "12px",
-                    fontWeight: "600",
-                    color: "white",
-                    opacity: isLoading ? 0.7 : 1,
-                  }}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      {t("verifying")}
-                    </>
-                  ) : (
-                    t("verifyCode")
-                  )}
-                </button>
-              </form>
-            )}
-            {step === 3 && (
-              <form onSubmit={handleResetPassword}>
-                <div className="mb-3 input-group">
-                  <input
+                    {isLoading ? t("verifying") : t("verifyCode")}
+                  </Button>
+                </form>
+              )}
+              {step === 3 && (
+                <form onSubmit={handleResetPassword}>
+                  <TextField
+                    fullWidth
                     type={showNewPassword ? "text" : "password"}
-                    className="form-control"
                     placeholder={t("newPassword")}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                     disabled={isLoading}
-                    style={{
-                      borderRadius: "10px 0 0 10px",
-                      border: "2px solid #ced4da",
-                      padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
-                      fontSize: "clamp(14px, 2vw, 16px)",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                      transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+                    sx={{
+                      mb: 3,
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "10px",
+                        border: "2px solid #ced4da",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                        "&:hover fieldset": { borderColor: "#4169E1" },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#4169E1",
+                          boxShadow: "0 0 0 0.2rem rgba(65, 105, 225, 0.25)",
+                        },
+                      },
+                      "& .MuiInputBase-input": {
+                        p: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
+                        fontSize: "clamp(14px, 2vw, 16px)",
+                      },
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            edge="end"
+                          >
+                            <i className={showNewPassword ? "bi bi-eye-slash" : "bi bi-eye"} />
+                          </IconButton>
+                        </InputAdornment>
+                      ),
                     }}
                   />
-                  <button
-                    type="button"
-                    className="input-group-text"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
-                  >
-                    <i className={showNewPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
-                  </button>
-                </div>
-                <div className="mb-3 input-group">
-                  <input
+                  <TextField
+                    fullWidth
                     type={showConfirmNewPassword ? "text" : "password"}
-                    className="form-control"
                     placeholder={t("confirmNewPassword")}
                     value={confirmNewPassword}
                     onChange={(e) => setConfirmNewPassword(e.target.value)}
                     required
                     disabled={isLoading}
-                    style={{
-                      borderRadius: "10px 0 0 10px",
-                      border: "2px solid #ced4da",
-                      padding: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
-                      fontSize: "clamp(14px, 2vw, 16px)",
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                      transition: "border-color 0.3s ease, box-shadow 0.3s ease",
+                    sx={{
+                      mb: 3,
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "10px",
+                        border: "2px solid #ced4da",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                        "&:hover fieldset": { borderColor: "#4169E1" },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#4169E1",
+                          boxShadow: "0 0 0 0.2rem rgba(65, 105, 225, 0.25)",
+                        },
+                      },
+                      "& .MuiInputBase-input": {
+                        p: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
+                        fontSize: "clamp(14px, 2vw, 16px)",
+                      },
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                            edge="end"
+                          >
+                            <i className={showConfirmNewPassword ? "bi bi-eye-slash" : "bi bi-eye"} />
+                          </IconButton>
+                        </InputAdornment>
+                      ),
                     }}
                   />
-                  <button
-                    type="button"
-                    className="input-group-text"
-                    onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
-                    style={{ borderRadius: "0 10px 10px 0", border: "2px solid #ced4da", borderLeft: "none" }}
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    disabled={isLoading}
+                    sx={{
+                      bgcolor: "#4169E1",
+                      borderRadius: "8px",
+                      p: "12px",
+                      fontWeight: 600,
+                      color: "white",
+                      opacity: isLoading ? 0.7 : 1,
+                      mb: 3,
+                      "&:hover": { bgcolor: "#3658C1" },
+                    }}
+                    startIcon={isLoading && <CircularProgress size={20} color="inherit" />}
                   >
-                    <i className={showConfirmNewPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
-                  </button>
-                </div>
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100 mb-3"
-                  disabled={isLoading}
-                  style={{
-                    backgroundColor: "#4169E1",
-                    borderColor: "#4169E1",
-                    borderRadius: "8px",
-                    padding: "12px",
-                    fontWeight: "600",
-                    color: "white",
-                    opacity: isLoading ? 0.7 : 1,
-                  }}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      {t("resettingPassword")}
-                    </>
-                  ) : (
-                    t("resetPassword")
-                  )}
-                </button>
-              </form>
-            )}
-            <div className="text-center mt-3">
-              <p className="mb-0 text-muted small">
-                <a
-                  href="#"
-                  className="text-primary fw-semibold"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate("/");
-                  }}
-                  style={{ fontSize: "clamp(13px, 2vw, 14px)" }}
-                >
-                  {t("backToSignIn")}
-                </a>
-              </p>
-            </div>
-          </div>
-        </motion.div>
+                    {isLoading ? t("resettingPassword") : t("resetPassword")}
+                  </Button>
+                </form>
+              )}
+              <Box sx={{ textAlign: "center", mt: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate("/");
+                    }}
+                    style={{
+                      color: "#4169E1",
+                      fontWeight: 600,
+                      fontSize: "clamp(13px, 2vw, 14px)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    {t("backToSignIn")}
+                  </a>
+                </Typography>
+              </Box>
+            </Box>
+          </motion.div>
+        </Paper>
       </motion.div>
-    </div>
+    </Box>
   );
 }
