@@ -666,9 +666,9 @@ export default function AuthPage() {
             >
               <Box sx={{ textAlign: "end", mb: 4, display: { md: "none" } }}>
                 <img
-                  src={themeMode === 'light' ? Logo : LogoDark}
+                  src={themeMode === 'light' ? LogoDark : Logo}
                   alt={t("title")}
-                  style={{ width: 60, height: 60, borderRadius: 4 }}
+                  style={{ width: 120, height: 80, borderRadius: 4 }}
                 />
               </Box>
 

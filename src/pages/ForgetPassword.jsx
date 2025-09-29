@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as THREE from "three";
@@ -15,18 +15,42 @@ import {
   Menu,
   MenuItem,
   CircularProgress,
-  Container,
-  Paper,
-  Grid,
+  Card,
 } from "@mui/material";
+import {
+  Visibility,
+  VisibilityOff,
+  Email,
+  Phone,
+  Shield,
+  Lock,
+  ArrowBack,
+} from "@mui/icons-material";
 import { auth, RecaptchaVerifier, signInWithPhoneNumber } from "../config/Firebase.config";
 import Logo from "../assets/logo.png";
+import LogoDark from "../assets/logo-light.png";
 import MedicalImage from "../assets/doctor.png";
 import FlagEN from "../assets/flag-en.png";
 import FlagFR from "../assets/flag-fr.png";
 import FlagAR from "../assets/flag-ar.png";
 import "react-toastify/dist/ReactToastify.css";
-import "bootstrap-icons/font/bootstrap-icons.css";
+
+// Premium color palette matching navbar
+const PREMIUM_COLORS = {
+  primary: '#4169E1',
+  secondary: '#6A5ACD',
+  accent: '#00B4D8',
+  success: '#4CAF50',
+  warning: '#FF9800',
+  error: '#F44336',
+  gradient: {
+    light: 'linear-gradient(135deg, #4169E1 0%, #6A5ACD 50%, #00B4D8 100%)',
+    dark: 'linear-gradient(135deg, #ffffffff 0%, #b5a4cbff 50%, #bbdadcff 100%)',
+    authLight: 'linear-gradient(135deg, #FFFFFF 0%, #F8F9FF 50%, #E3F2FD 100%)',
+    authDark: 'linear-gradient(135deg, #0A0F2D 0%, #1A1F4B 50%, #002A32 100%)',
+    buttonLight: 'linear-gradient(135deg, #4169E1 0%, #6A5ACD 100%)',
+  }
+};
 
 export default function ForgetPassword() {
   const { t, i18n } = useTranslation();
@@ -42,6 +66,7 @@ export default function ForgetPassword() {
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [themeMode, setThemeMode] = useState('light');
   const recaptchaVerifier = useRef(null);
   const vantaRef = useRef(null);
 
@@ -50,7 +75,13 @@ export default function ForgetPassword() {
     i18n.changeLanguage("en");
   }, [i18n]);
 
-  // Initialize Vanta effect
+  // Initialize theme
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('themeMode') || 'light';
+    setThemeMode(savedTheme);
+  }, []);
+
+  // Enhanced Vanta effect with theme support
   useEffect(() => {
     const vantaEffect = NET({
       el: vantaRef.current,
@@ -62,17 +93,17 @@ export default function ForgetPassword() {
       minWidth: 200.0,
       scale: 1.0,
       scaleMobile: 1.0,
-      color: 0x4169e1,
-      backgroundColor: 0xf8f9fa,
-      points: 10.0,
-      maxDistance: 20.0,
-      spacing: 15.0,
+      color: themeMode === 'light' ? 0x4169e1 : 0x00B4D8,
+      backgroundColor: themeMode === 'light' ? 0xf8f9fa : 0x0A0F2D,
+      points: 12.0,
+      maxDistance: 25.0,
+      spacing: 18.0,
     });
 
     return () => {
       if (vantaEffect) vantaEffect.destroy();
     };
-  }, []);
+  }, [themeMode]);
 
   // Initialize reCAPTCHA (invisible) on mount
   useEffect(() => {
@@ -269,12 +300,58 @@ export default function ForgetPassword() {
     handleMenuClose();
   };
 
+  const toggleTheme = () => {
+    const newTheme = themeMode === 'light' ? 'dark' : 'light';
+    setThemeMode(newTheme);
+    localStorage.setItem('themeMode', newTheme);
+  };
+
+  const formFieldStyle = {
+    mb: 3,
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 3,
+      background: themeMode === 'light' ? 'rgba(248, 249, 255, 0.5)' : 'rgba(255,255,255,0.05)',
+      border: `1px solid ${themeMode === 'light' ? 'rgba(65, 105, 225, 0.2)' : 'rgba(255,255,255,0.1)'}`,
+      '&:hover fieldset': { borderColor: PREMIUM_COLORS.primary },
+      '&.Mui-focused fieldset': { 
+        borderColor: PREMIUM_COLORS.primary,
+        boxShadow: `0 0 0 2px ${PREMIUM_COLORS.primary}20`,
+      },
+    },
+    "& .MuiInputBase-input": {
+      p: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
+      fontSize: "clamp(14px, 2vw, 16px)",
+    },
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    }
+  };
+
   return (
     <Box
       ref={vantaRef}
       dir={i18n.language === "ar" ? "rtl" : "ltr"}
       sx={{
-        bgcolor: "#f8f9fa",
         minHeight: "100vh",
         minWidth: "100vw",
         display: "flex",
@@ -282,10 +359,28 @@ export default function ForgetPassword() {
         justifyContent: "center",
         p: 2,
         position: "relative",
-        zIndex: 1,
+        overflow: "hidden",
+        background: themeMode === 'light' 
+          ? PREMIUM_COLORS.gradient.authLight
+          : PREMIUM_COLORS.gradient.authDark,
       }}
     >
-      {/* Language Switcher */}
+      {/* Animated Background Elements */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: themeMode === 'light'
+            ? 'radial-gradient(circle at 20% 80%, rgba(65, 105, 225, 0.1) 0%, transparent 50%)'
+            : 'radial-gradient(circle at 20% 80%, rgba(0, 180, 216, 0.1) 0%, transparent 50%)',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Enhanced Language Switcher & Theme Toggle - Circular */}
       <Box
         sx={{
           position: "absolute",
@@ -293,28 +388,75 @@ export default function ForgetPassword() {
           right: i18n.language === "ar" ? "auto" : "20px",
           left: i18n.language === "ar" ? "20px" : "auto",
           zIndex: 3,
+          display: 'flex',
+          gap: 1,
         }}
       >
         <IconButton
+          onClick={toggleTheme}
+          sx={{
+            width: 40,
+            height: 40,
+            bgcolor: themeMode === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(26, 31, 75, 0.9)',
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${themeMode === 'light' ? 'rgba(65, 105, 225, 0.1)' : 'rgba(0, 180, 216, 0.1)'}`,
+            borderRadius: '50%',
+            '&:hover': {
+              bgcolor: themeMode === 'light' ? 'white' : 'rgba(26, 31, 75, 1)',
+              transform: 'scale(1.1)',
+            },
+            transition: 'all 0.3s ease',
+          }}
+        >
+          {themeMode === 'light' ? '🌙' : '☀️'}
+        </IconButton>
+
+        <IconButton
           onClick={handleMenuOpen}
           aria-label={t(`language.${i18n.language}`)}
-          sx={{ p: 0 }}
+          sx={{
+            width: 40,
+            height: 40,
+            bgcolor: themeMode === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(26, 31, 75, 0.9)',
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${themeMode === 'light' ? 'rgba(65, 105, 225, 0.1)' : 'rgba(0, 180, 216, 0.1)'}`,
+            borderRadius: '50%',
+            '&:hover': {
+              bgcolor: themeMode === 'light' ? 'white' : 'rgba(26, 31, 75, 1)',
+              transform: 'scale(1.1)',
+            },
+            transition: 'all 0.3s ease',
+            p: 0.5,
+          }}
         >
           <img
             src={languages.find((lang) => lang.code === i18n.language)?.flag}
             alt={t(`language.${i18n.language}`)}
-            style={{ width: 24, height: 24 }}
+            style={{ 
+              width: 20, 
+              height: 20, 
+              borderRadius: '50%',
+            }}
           />
         </IconButton>
+        
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
           sx={{
             "& .MuiPaper-root": {
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              borderRadius: "4px",
-              p: 1,
+              boxShadow: themeMode === 'light' 
+                ? "0 8px 32px rgba(65, 105, 225, 0.15)" 
+                : "0 8px 32px rgba(0, 0, 0, 0.3)",
+              borderRadius: "16px",
+              p: 1.5,
+              background: themeMode === 'light' 
+                ? 'rgba(255, 255, 255, 0.95)' 
+                : 'rgba(26, 31, 75, 0.95)',
+              backdropFilter: 'blur(20px)',
+              border: `1px solid ${themeMode === 'light' ? 'rgba(65, 105, 225, 0.1)' : 'rgba(0, 180, 216, 0.1)'}`,
+              minWidth: 120,
             },
           }}
           anchorOrigin={{
@@ -330,89 +472,157 @@ export default function ForgetPassword() {
             <MenuItem
               key={lang.code}
               onClick={() => changeLanguage(lang.code)}
-              sx={{ p: 0 }}
+              sx={{
+                borderRadius: "12px",
+                m: 0.5,
+                py: 1.5,
+                px: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                '&:hover': {
+                  bgcolor: themeMode === 'light' ? 'rgba(65, 105, 225, 0.1)' : 'rgba(0, 180, 216, 0.1)',
+                },
+              }}
             >
-              <IconButton aria-label={lang.label}>
-                <img src={lang.flag} alt={lang.label} style={{ width: 24, height: 24 }} />
-              </IconButton>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  border: `2px solid ${themeMode === 'light' ? 'rgba(65, 105, 225, 0.2)' : 'rgba(0, 180, 216, 0.2)'}`,
+                }}
+              >
+                <img 
+                  src={lang.flag} 
+                  alt={lang.label} 
+                  style={{ 
+                    width: 24, 
+                    height: 24, 
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                  }} 
+                />
+              </Box>
+              <Typography sx={{ 
+                fontSize: '0.9rem',
+                color: themeMode === 'light' ? 'text.primary' : 'white',
+                fontWeight: 500,
+              }}>
+                {lang.label}
+              </Typography>
             </MenuItem>
           ))}
         </Menu>
       </Box>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
         style={{ width: "100%", maxWidth: 1200, minHeight: 500, maxHeight: "90vh", zIndex: 2 }}
       >
-        <Paper
-          elevation={3}
+        <Card
+          elevation={0}
           sx={{
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
             borderRadius: 4,
             overflow: "hidden",
-            bgcolor: "white",
+            background: themeMode === 'light'
+              ? 'rgba(255, 255, 255, 0.95)'
+              : 'rgba(26, 31, 75, 0.95)',
+            backdropFilter: 'blur(20px)',
+            border: `1px solid ${themeMode === 'light' ? 'rgba(65, 105, 225, 0.1)' : 'rgba(0, 180, 216, 0.1)'}`,
+            boxShadow: themeMode === 'light'
+              ? '0 20px 40px rgba(65, 105, 225, 0.15)'
+              : '0 20px 40px rgba(0, 0, 0, 0.3)',
           }}
         >
+          {/* Left Panel - Enhanced Brand Section */}
           <Box
             sx={{
-              bgcolor: "#4169E1",
-              flex: { md: "0 0 35%" },
+              bgcolor: PREMIUM_COLORS.primary,
+              flex: { md: "0 0 40%" },
               display: { xs: "none", md: "flex" },
               flexDirection: "column",
-              p: { md: 5, xs: 4 },
+              p: 5,
+              position: 'relative',
+              overflow: 'hidden',
+              background: PREMIUM_COLORS.gradient.light,
             }}
           >
-            <Box sx={{ mb: 2 }}>
-              <img
-                src={Logo}
-                alt={t("title")}
-                style={{
-                  width: "clamp(100px, 10vw, 150px)",
-                  height: "auto",
-                  aspectRatio: "150/80",
-                  borderRadius: 4,
-                }}
-              />
-            </Box>
+            {/* Animated Background Pattern */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              }}
+            />
+            
+            <motion.div variants={itemVariants}>
+              <Box sx={{ mb: 4, position: 'relative' }}>
+                <img
+                  src={themeMode === 'light' ? Logo : Logo}
+                  alt={t("title")}
+                  style={{
+                    width: 160,
+                    height: 'auto',
+                    filter: themeMode === 'dark' ? 'brightness(0) invert(1)' : 'none',
+                  }}
+                />
+              </Box>
+            </motion.div>
+
             <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center", alignItems: "center", my: 3 }}>
-              <img
-                src={MedicalImage}
-                alt={t("medicalIllustration")}
-                style={{
-                  width: "100%",
-                  maxWidth: 380,
-                  height: "auto",
-                  aspectRatio: "380/420",
-                  borderRadius: 4,
-                }}
-              />
-            </Box>
-            <Box sx={{ textAlign: "center", mt: "auto" }}>
-              <Typography
-                sx={{
-                  color: "#e3f2fd",
-                  fontSize: "clamp(10px, 1.2vw, 12px)",
-                  letterSpacing: "1px",
-                  fontWeight: 300,
-                  transition: "color 0.3s ease",
-                  "&:hover": { color: "#d0e7ff" },
-                }}
+              <motion.div
+                variants={itemVariants}
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
               >
-                <i className="bi bi-copyright" style={{ marginRight: 4 }} />
-                {t("copyright")}
-              </Typography>
+                <img
+                  src={themeMode === 'light' ? MedicalImage : MedicalImage}
+                  alt={t("medicalIllustration")}
+                  style={{
+                    width: "100%",
+                    maxWidth: 220,
+                    height: "auto",
+                    borderRadius: 12,
+                  }}
+                />
+              </motion.div>
             </Box>
+
+            <motion.div variants={itemVariants}>
+              <Box sx={{ textAlign: "center", mt: "auto" }}>
+                <Typography
+                  sx={{
+                    color: "rgba(255,255,255,0.9)",
+                    fontSize: "0.9rem",
+                    letterSpacing: "0.5px",
+                    fontWeight: 400,
+                  }}
+                >
+                  <i className="bi bi-copyright" style={{ marginRight: 4 }} />
+                  {t("copyright")}
+                </Typography>
+              </Box>
+            </motion.div>
           </Box>
+
+          {/* Right Panel - Enhanced Password Reset Form */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
+            variants={itemVariants}
             style={{
-              flex: "0 0 65%",
-              bgcolor: "white",
+              flex: "0 0 60%",
               minHeight: 500,
               maxHeight: "90vh",
               overflow: "hidden",
@@ -420,300 +630,314 @@ export default function ForgetPassword() {
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
-              p: { xs: 3, md: 4, lg: 5 },
+              padding: "clamp(20px, 4vw, 40px)",
             }}
           >
             <Box
               sx={{
                 width: "100%",
-                maxWidth: 400,
+                maxWidth: 450,
                 maxHeight: "100%",
                 overflowY: "auto",
                 scrollbarWidth: "none",
                 "&::-webkit-scrollbar": { display: "none" },
               }}
             >
-              <style>
-                {`
-                  .password-strength-indicator {
-                    height: 4px;
-                    width: 100%;
-                    margin-top: 5px;
-                    border-radius: 2px;
-                  }
-                `}
-              </style>
               <Box sx={{ textAlign: "end", mb: 4, display: { md: "none" } }}>
                 <img
-                  src={Logo}
+                  src={themeMode === 'light' ? LogoDark : Logo}
                   alt={t("title")}
-                  style={{ width: 60, height: 60, borderRadius: 4 }}
+                  style={{ width: 120, height: 80, borderRadius: 4 }}
                 />
               </Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  mb: { xs: 3, md: 4 },
-                  textAlign: "center",
-                  color: "black",
-                  fontWeight: 700,
-                  fontFamily: "Montserrat, sans-serif",
-                  fontSize: "clamp(28px, 5vw, 42px)",
-                  transition: "color 0.3s ease",
-                }}
-              >
-                {t("resetPassword")}
-              </Typography>
-              <Typography
-                sx={{
-                  textAlign: "center",
-                  color: "text.secondary",
-                  mb: { xs: 3, md: 4 },
-                  fontFamily: "Montserrat, sans-serif",
-                  fontSize: "clamp(14px, 2vw, 17px)",
-                  transition: "color 0.3s ease",
-                }}
-              >
-                {step === 1 && t("enterContactPrompt")}
-                {step === 2 && t("enterCodePrompt")}
-                {step === 3 && t("createNewPasswordPrompt")}
-              </Typography>
+
+              <motion.div variants={itemVariants}>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    mb: 3,
+                    textAlign: "center",
+                    fontWeight: 800,
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: "clamp(28px, 5vw, 42px)",
+                    background: PREMIUM_COLORS.gradient.light,
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  {t("resetPassword")}
+                </Typography>
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <Typography
+                  sx={{
+                    textAlign: "center",
+                    color: themeMode === 'light' ? 'text.secondary' : 'rgba(255,255,255,0.7)',
+                    mb: 4,
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: "clamp(14px, 2vw, 17px)",
+                  }}
+                >
+                  {step === 1 && t("enterContactPrompt")}
+                  {step === 2 && t("enterCodePrompt")}
+                  {step === 3 && t("createNewPasswordPrompt")}
+                </Typography>
+              </motion.div>
+
               <Box id="recaptcha-container" sx={{ display: "none" }} />
-              {step === 1 && (
-                <form onSubmit={handleSendCode}>
-                  <TextField
-                    fullWidth
-                    type={usePhone ? "tel" : "email"}
-                    placeholder={usePhone ? t("phoneNumber") : t("email")}
-                    value={contact}
-                    onChange={(e) => setContact(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    sx={{
-                      mb: 3,
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "10px",
-                        border: "2px solid #ced4da",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                        "&:hover fieldset": { borderColor: "#4169E1" },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#4169E1",
-                          boxShadow: "0 0 0 0.2rem rgba(65, 105, 225, 0.25)",
-                        },
-                      },
-                      "& .MuiInputBase-input": {
-                        p: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
-                        fontSize: "clamp(14px, 2vw, 16px)",
-                      },
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <i className={usePhone ? "bi bi-telephone" : "bi bi-envelope"} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <Box sx={{ textAlign: "center", mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {t("orWith")}{" "}
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (usePhone) switchToEmail();
-                          else switchToPhone();
-                        }}
-                        style={{
-                          color: "#4169E1",
-                          fontWeight: 600,
-                          fontSize: "clamp(13px, 2vw, 14px)",
-                          textDecoration: "none",
+
+              <AnimatePresence mode="wait">
+                {step === 1 && (
+                  <motion.form
+                    key="step1"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    onSubmit={handleSendCode}
+                  >
+                    <TextField
+                      fullWidth
+                      type={usePhone ? "tel" : "email"}
+                      placeholder={usePhone ? t("phoneNumber") : t("email")}
+                      value={contact}
+                      onChange={(e) => setContact(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      sx={formFieldStyle}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            {usePhone ? (
+                              <Phone sx={{ color: PREMIUM_COLORS.primary }} />
+                            ) : (
+                              <Email sx={{ color: PREMIUM_COLORS.primary }} />
+                            )}
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <Box sx={{ textAlign: "center", mb: 3 }}>
+                      <Typography variant="body2" sx={{ 
+                        color: themeMode === 'light' ? 'text.secondary' : 'rgba(255,255,255,0.7)',
+                        fontSize: '0.9rem'
+                      }}>
+                        {t("orWith")}{" "}
+                        <a
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (usePhone) switchToEmail();
+                            else switchToPhone();
+                          }}
+                          style={{
+                            color: PREMIUM_COLORS.primary,
+                            fontWeight: 600,
+                            fontSize: "clamp(13px, 2vw, 14px)",
+                            textDecoration: "none",
+                            transition: "color 0.3s ease",
+                          }}
+                          onMouseEnter={(e) => (e.target.style.color = PREMIUM_COLORS.secondary)}
+                          onMouseLeave={(e) => (e.target.style.color = PREMIUM_COLORS.primary)}
+                        >
+                          {usePhone ? t("email") : t("phoneNumber")}
+                        </a>
+                      </Typography>
+                    </Box>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        fullWidth
+                        disabled={isLoading}
+                        sx={{
+                          background: PREMIUM_COLORS.gradient.buttonLight,
+                          borderRadius: 3,
+                          p: 2,
+                          fontWeight: 700,
+                          fontSize: '1rem',
+                          mb: 3,
+                          boxShadow: '0 4px 15px rgba(65, 105, 225, 0.3)',
+                          '&:hover': {
+                            boxShadow: '0 6px 20px rgba(65, 105, 225, 0.4)',
+                            transform: 'translateY(-1px)',
+                          },
+                          transition: 'all 0.3s ease',
+                          color: 'white',
                         }}
                       >
-                        {usePhone ? t("email") : t("phoneNumber")}
-                      </a>
-                    </Typography>
-                  </Box>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    fullWidth
-                    disabled={isLoading}
-                    sx={{
-                      bgcolor: "#4169E1",
-                      borderRadius: "8px",
-                      p: "12px",
-                      fontWeight: 600,
-                      color: "white",
-                      opacity: isLoading ? 0.7 : 1,
-                      mb: 3,
-                      "&:hover": { bgcolor: "#3658C1" },
-                    }}
-                    startIcon={isLoading && <CircularProgress size={20} color="inherit" />}
+                        {isLoading ? (
+                          <CircularProgress size={24} color="inherit" />
+                        ) : (
+                          t("sendCode")
+                        )}
+                      </Button>
+                    </motion.div>
+                  </motion.form>
+                )}
+
+                {step === 2 && (
+                  <motion.form
+                    key="step2"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    onSubmit={handleVerifyCode}
                   >
-                    {isLoading ? t("sendingCode") : t("sendCode")}
-                  </Button>
-                </form>
-              )}
-              {step === 2 && (
-                <form onSubmit={handleVerifyCode}>
-                  <TextField
-                    fullWidth
-                    type="text"
-                    placeholder={t("Enter Code")}
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    inputProps={{ maxLength: 6 }}
-                    required
-                    disabled={isLoading}
-                    sx={{
-                      mb: 3,
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "10px",
-                        border: "2px solid #ced4da",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                        "&:hover fieldset": { borderColor: "#4169E1" },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#4169E1",
-                          boxShadow: "0 0 0 0.2rem rgba(65, 105, 225, 0.25)",
-                        },
-                      },
-                      "& .MuiInputBase-input": {
-                        p: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
-                        fontSize: "clamp(14px, 2vw, 16px)",
-                      },
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <i className="bi bi-shield-check" />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    fullWidth
-                    disabled={isLoading}
-                    sx={{
-                      bgcolor: "#4169E1",
-                      borderRadius: "8px",
-                      p: "12px",
-                      fontWeight: 600,
-                      color: "white",
-                      opacity: isLoading ? 0.7 : 1,
-                      mb: 3,
-                      "&:hover": { bgcolor: "#3658C1" },
-                    }}
-                    startIcon={isLoading && <CircularProgress size={20} color="inherit" />}
+                    <TextField
+                      fullWidth
+                      type="text"
+                      placeholder={t("Enter Code")}
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      inputProps={{ maxLength: 6 }}
+                      required
+                      disabled={isLoading}
+                      sx={formFieldStyle}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Shield sx={{ color: PREMIUM_COLORS.primary }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        fullWidth
+                        disabled={isLoading}
+                        sx={{
+                          background: PREMIUM_COLORS.gradient.buttonLight,
+                          borderRadius: 3,
+                          p: 2,
+                          fontWeight: 700,
+                          fontSize: '1rem',
+                          mb: 3,
+                          boxShadow: '0 4px 15px rgba(65, 105, 225, 0.3)',
+                          '&:hover': {
+                            boxShadow: '0 6px 20px rgba(65, 105, 225, 0.4)',
+                            transform: 'translateY(-1px)',
+                          },
+                          transition: 'all 0.3s ease',
+                          color: 'white',
+                        }}
+                      >
+                        {isLoading ? (
+                          <CircularProgress size={24} color="inherit" />
+                        ) : (
+                          t("verifyCode")
+                        )}
+                      </Button>
+                    </motion.div>
+                  </motion.form>
+                )}
+
+                {step === 3 && (
+                  <motion.form
+                    key="step3"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    onSubmit={handleResetPassword}
                   >
-                    {isLoading ? t("verifying") : t("verifyCode")}
-                  </Button>
-                </form>
-              )}
-              {step === 3 && (
-                <form onSubmit={handleResetPassword}>
-                  <TextField
-                    fullWidth
-                    type={showNewPassword ? "text" : "password"}
-                    placeholder={t("newPassword")}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    sx={{
-                      mb: 3,
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "10px",
-                        border: "2px solid #ced4da",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                        "&:hover fieldset": { borderColor: "#4169E1" },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#4169E1",
-                          boxShadow: "0 0 0 0.2rem rgba(65, 105, 225, 0.25)",
-                        },
-                      },
-                      "& .MuiInputBase-input": {
-                        p: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
-                        fontSize: "clamp(14px, 2vw, 16px)",
-                      },
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => setShowNewPassword(!showNewPassword)}
-                            edge="end"
-                          >
-                            <i className={showNewPassword ? "bi bi-eye-slash" : "bi bi-eye"} />
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <TextField
-                    fullWidth
-                    type={showConfirmNewPassword ? "text" : "password"}
-                    placeholder={t("confirmNewPassword")}
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    sx={{
-                      mb: 3,
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "10px",
-                        border: "2px solid #ced4da",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                        "&:hover fieldset": { borderColor: "#4169E1" },
-                        "&.Mui-focused fieldset": {
-                          borderColor: "#4169E1",
-                          boxShadow: "0 0 0 0.2rem rgba(65, 105, 225, 0.25)",
-                        },
-                      },
-                      "& .MuiInputBase-input": {
-                        p: "clamp(12px, 2vw, 14px) clamp(14px, 2vw, 18px)",
-                        fontSize: "clamp(14px, 2vw, 16px)",
-                      },
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
-                            edge="end"
-                          >
-                            <i className={showConfirmNewPassword ? "bi bi-eye-slash" : "bi bi-eye"} />
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    fullWidth
-                    disabled={isLoading}
-                    sx={{
-                      bgcolor: "#4169E1",
-                      borderRadius: "8px",
-                      p: "12px",
-                      fontWeight: 600,
-                      color: "white",
-                      opacity: isLoading ? 0.7 : 1,
-                      mb: 3,
-                      "&:hover": { bgcolor: "#3658C1" },
-                    }}
-                    startIcon={isLoading && <CircularProgress size={20} color="inherit" />}
-                  >
-                    {isLoading ? t("resettingPassword") : t("resetPassword")}
-                  </Button>
-                </form>
-              )}
+                    <TextField
+                      fullWidth
+                      type={showNewPassword ? "text" : "password"}
+                      placeholder={t("newPassword")}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      sx={formFieldStyle}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Lock sx={{ color: PREMIUM_COLORS.primary }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              sx={{ color: PREMIUM_COLORS.primary }}
+                            >
+                              {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      type={showConfirmNewPassword ? "text" : "password"}
+                      placeholder={t("confirmNewPassword")}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      sx={formFieldStyle}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Lock sx={{ color: PREMIUM_COLORS.primary }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                              sx={{ color: PREMIUM_COLORS.primary }}
+                            >
+                              {showConfirmNewPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        fullWidth
+                        disabled={isLoading}
+                        sx={{
+                          background: PREMIUM_COLORS.gradient.buttonLight,
+                          borderRadius: 3,
+                          p: 2,
+                          fontWeight: 700,
+                          fontSize: '1rem',
+                          mb: 3,
+                          boxShadow: '0 4px 15px rgba(65, 105, 225, 0.3)',
+                          '&:hover': {
+                            boxShadow: '0 6px 20px rgba(65, 105, 225, 0.4)',
+                            transform: 'translateY(-1px)',
+                          },
+                          transition: 'all 0.3s ease',
+                          color: 'white',
+                        }}
+                      >
+                        {isLoading ? (
+                          <CircularProgress size={24} color="inherit" />
+                        ) : (
+                          t("resetPassword")
+                        )}
+                      </Button>
+                    </motion.div>
+                  </motion.form>
+                )}
+              </AnimatePresence>
+
               <Box sx={{ textAlign: "center", mt: 3 }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ 
+                  color: themeMode === 'light' ? 'text.secondary' : 'rgba(255,255,255,0.7)',
+                  fontSize: '0.9rem'
+                }}>
                   <a
                     href="#"
                     onClick={(e) => {
@@ -721,19 +945,26 @@ export default function ForgetPassword() {
                       navigate("/");
                     }}
                     style={{
-                      color: "#4169E1",
+                      color: PREMIUM_COLORS.primary,
                       fontWeight: 600,
                       fontSize: "clamp(13px, 2vw, 14px)",
                       textDecoration: "none",
+                      transition: "color 0.3s ease",
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
                     }}
+                    onMouseEnter={(e) => (e.target.style.color = PREMIUM_COLORS.secondary)}
+                    onMouseLeave={(e) => (e.target.style.color = PREMIUM_COLORS.primary)}
                   >
+                    <ArrowBack sx={{ fontSize: 18 }} />
                     {t("backToSignIn")}
                   </a>
                 </Typography>
               </Box>
             </Box>
           </motion.div>
-        </Paper>
+        </Card>
       </motion.div>
     </Box>
   );
