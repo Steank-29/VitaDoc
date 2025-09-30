@@ -200,6 +200,12 @@ export default function Sidebar({ onToggle }) {
     return userData.medicalSpecialty;
   };
 
+  const getCurrentLocation = () => {
+    const userData = getUserData();
+    if (!userData || !userData.location) return 'Current Location';
+    return userData.location;
+  };
+
   const menuItems = [
     {
       label: 'Dashboard',
@@ -361,7 +367,7 @@ export default function Sidebar({ onToggle }) {
       >
         {/* Header with Toggle Button */}
         <Box sx={{ 
-          p: 2, 
+          p: 1, 
           position: 'sticky', 
           top: 0, 
           background: 'inherit', 
@@ -374,7 +380,7 @@ export default function Sidebar({ onToggle }) {
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: open ? 'space-between' : 'center', // Center when closed
-            mb: open ? 2 : 0, // Remove margin when closed
+            mb: open ? 0 : 0, // Remove margin when closed
           }}>
             {open && (
               <Typography 
@@ -423,7 +429,7 @@ export default function Sidebar({ onToggle }) {
                 fontStyle: 'italic',
               }}
             >
-              {getMedicalSpecialty()}
+              {getMedicalSpecialty()} <br /> {getCurrentLocation()}
             </Typography>
           )}
         </Box>
