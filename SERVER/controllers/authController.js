@@ -124,7 +124,6 @@ const signIn = async (req, res) => {
       throw new Error('JWT_SECRET not configured');
     }
 
-    // Normalize email to lowercase
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -138,8 +137,28 @@ const signIn = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
+    const token = jwt.sign(
+      { 
+        id: user._id,
+        email: user.email,
+        role: user.role // if you have roles
+      }, 
+      process.env.JWT_SECRET, 
+      { 
+        expiresIn: '1h',
+        issuer: 'VitaDoc',
+        subject: user._id.toString()
+      }
+    );
+    
+    res.json({ 
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name
+      }
+    });
   } catch (err) {
     console.error('Signin error:', err);
     res.status(500).json({ message: err.message || 'Server error' });
@@ -242,4 +261,54 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { signUp, signIn, forgotPassword, verifyCode, resetPassword };
+const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password -resetOtp -resetOtpExpiry');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json(user);
+  } catch (err) {
+    console.error('Get user by ID error:', err);
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid user ID format' });
+    }
+    res.status(500).json({ message: err.message || 'Server error' });
+  }
+};
+
+
+// Backend - refresh token route
+const refreshToken = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Verify user still exists
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    // Issue new token
+    const newToken = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token: newToken });
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    res.status(401).json({ message: 'Invalid or expired token' });
+  }
+};
+
+module.exports = { signUp, signIn, forgotPassword, verifyCode, resetPassword, getUserById, refreshToken };

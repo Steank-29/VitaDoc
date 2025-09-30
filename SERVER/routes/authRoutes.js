@@ -2,7 +2,7 @@ const express = require('express');
 const passport = require('../config/passport');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { signUp, signIn, forgotPassword, verifyCode, resetPassword } = require('../controllers/authController');
+const { signUp, signIn, forgotPassword, verifyCode, resetPassword, getUserById, refreshToken} = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -12,6 +12,9 @@ router.post('/signin', signIn);
 router.post('/forgot-password', forgotPassword);
 router.post('/verify-code', verifyCode);
 router.post('/reset-password', resetPassword);
+router.get('/user/:id', getUserById);
+router.post('/refresh-token', refreshToken);
+
 
 // Google Routes
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
