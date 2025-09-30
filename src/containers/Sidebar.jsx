@@ -166,48 +166,8 @@ export default function Sidebar({ onToggle }) {
   const [open, setOpen] = useState(!isMobile);
   const [activeItem, setActiveItem] = useState('Dashboard');
   const [expandedItems, setExpandedItems] = useState({});
-  const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Fetch user data on component mount
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = getToken();
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-
-        // Decode token to get user ID
-        const decoded = jwtDecode(token);
-        const userId = decoded.id;
-
-        // Fetch user data from API
-        const response = await fetch(`http://localhost:5000/auth/user/${userId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          setUserData(userData);
-        } else {
-          console.error('Failed to fetch user data');
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
 
   // Handle URL token parameter (for Google auth redirect)
   useEffect(() => {
@@ -216,10 +176,29 @@ export default function Sidebar({ onToggle }) {
     if (token) {
       localStorage.setItem('token', token);
       window.history.replaceState({}, '', '/dashboard');
-      // Reload user data after token is set
+      // Reload the page to apply the new token
       window.location.reload();
     }
   }, [location]);
+
+  // Get user data directly from token
+  const getUserData = () => {
+    try {
+      const token = getToken();
+      if (!token) return null;
+      return jwtDecode(token);
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  };
+
+  // Get medical specialty from token
+  const getMedicalSpecialty = () => {
+    const userData = getUserData();
+    if (!userData || !userData.medicalSpecialty) return 'Medical Professional';
+    return userData.medicalSpecialty;
+  };
 
   const menuItems = [
     {
@@ -370,12 +349,6 @@ export default function Sidebar({ onToggle }) {
     }
   };
 
-  // Get medical specialty or fallback
-  const getMedicalSpecialty = () => {
-    if (!userData || !userData.medicalSpecialty) return 'Medical Professional';
-    return userData.medicalSpecialty;
-  };
-
   return (
     <>
       <StyledDrawer 
@@ -450,7 +423,7 @@ export default function Sidebar({ onToggle }) {
                 fontStyle: 'italic',
               }}
             >
-              {loading ? 'Loading...' : getMedicalSpecialty()}
+              {getMedicalSpecialty()}
             </Typography>
           )}
         </Box>

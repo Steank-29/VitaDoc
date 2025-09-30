@@ -142,46 +142,6 @@ export default function Navbar() {
   const [notificationAnchorEl, setNotificationAnchorEl] = React.useState(null);
   const [messageAnchorEl, setMessageAnchorEl] = React.useState(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = React.useState(false);
-  const [userData, setUserData] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-
-  // Fetch user data on component mount
-  React.useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = getToken();
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-
-        // Decode token to get user ID
-        const decoded = jwtDecode(token);
-        const userId = decoded.id;
-
-        // Fetch user data from API
-        const response = await fetch(`http://localhost:5000/auth/user/${userId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          setUserData(userData);
-        } else {
-          console.error('Failed to fetch user data');
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
 
   // Set English as default language on component mount
   React.useEffect(() => {
@@ -252,42 +212,49 @@ export default function Navbar() {
     handleMenuClose();
   };
 
-  // Get user display name
+  // Get user data directly from token
+  const getUserData = () => {
+    try {
+      const token = getToken();
+      if (!token) return null;
+      return jwtDecode(token);
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  };
+
+  // Get user display name from token
   const getUserDisplayName = () => {
-    if (!userData) return t('Dr Jelassi Joury'); // Fallback
+    const userData = getUserData();
+    if (!userData || !userData.firstName || !userData.lastName) {
+      return t('Dr Jelassi Joury'); // Fallback
+    }
     return `Dr ${userData.lastName} ${userData.firstName}`;
   };
 
-  // Get profile picture URL
-// Get profile picture URL
-const getProfilePicture = () => {
-  if (!userData || !userData.picture) return null;
-  
-  // If it's already a full URL (like from Google), use it directly
-  if (userData.picture.startsWith('http')) return userData.picture;
-  
-  // If it starts with /uploads, construct the full URL correctly
-  if (userData.picture.startsWith('/uploads/')) {
-    return `http://localhost:5000${userData.picture}`;
-  }
-  
-  // Fallback: if it's just a filename, construct the path
-  return `http://localhost:5000/uploads/${userData.picture}`;
-};
+  // Get profile picture URL from token
+  const getProfilePicture = () => {
+    const userData = getUserData();
+    if (!userData || !userData.picture) return null;
+    
+    // If it's already a full URL (like from Google), use it directly
+    if (userData.picture.startsWith('http')) return userData.picture;
+    
+    // If it starts with /uploads, construct the full URL correctly
+    if (userData.picture.startsWith('/uploads/')) {
+      return `http://localhost:5000${userData.picture}`;
+    }
+    
+    // Fallback: if it's just a filename, construct the path
+    return `http://localhost:5000/uploads/${userData.picture}`;
+  };
 
-
-const ProfileAvatar = styled('img')({
-  width: 40,
-  height: 40,
-  borderRadius: '50%',
-  objectFit: 'cover',
-  border: '2px solid',
-});
-
-// Add this function for image error handling
-const handleImageError = (event) => {
-  event.target.style.display = 'none';
-};
+  // Image error handler
+  const handleImageError = (event) => {
+    console.log('Image failed to load:', event.target.src);
+    event.target.style.display = 'none';
+  };
 
   const languages = [
     { code: "en", flag: FlagEN, label: t("english") },
@@ -1059,6 +1026,7 @@ const handleImageError = (event) => {
                   <ProfileAvatar 
                     src={getProfilePicture()} 
                     alt="Profile"
+                    onError={handleImageError}
                     sx={{ 
                       borderColor: iconColors.profile,
                     }}

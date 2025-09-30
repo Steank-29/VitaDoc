@@ -103,7 +103,7 @@ const signUp = async (req, res) => {
 
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user._id, }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.status(201).json({ token });
   } catch (err) {
     console.error('Signup error:', err);
@@ -137,11 +137,24 @@ const signIn = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Create token with all user data
     const token = jwt.sign(
       { 
         id: user._id,
         email: user.email,
-        role: user.role // if you have roles
+        firstName: user.firstName,
+        lastName: user.lastName,
+        gender: user.gender,
+        dateOfBirth: user.dateOfBirth,
+        medicalSpecialty: user.medicalSpecialty,
+        picture: user.picture,
+        location: user.location,
+        phoneNumber: user.phoneNumber,
+        secondPhoneNumber: user.secondPhoneNumber,
+        role: user.role,
+        googleId: user.googleId,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       }, 
       process.env.JWT_SECRET, 
       { 
@@ -156,7 +169,17 @@ const signIn = async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        name: user.name
+        firstName: user.firstName,
+        lastName: user.lastName,
+        gender: user.gender,
+        dateOfBirth: user.dateOfBirth,
+        medicalSpecialty: user.medicalSpecialty,
+        picture: user.picture,
+        location: user.location,
+        phoneNumber: user.phoneNumber,
+        secondPhoneNumber: user.secondPhoneNumber,
+        role: user.role,
+        createdAt: user.createdAt
       }
     });
   } catch (err) {
